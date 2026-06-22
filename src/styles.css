@@ -103,6 +103,7 @@ button {
 
 .sidebar {
   border-right: 1px solid rgba(48, 48, 45, 0.28);
+  overflow-y: auto;
 }
 
 .inspector {
@@ -272,21 +273,31 @@ button {
   width: 8px;
 }
 
-.template-panel.is-collapsed .panel-chevron {
+.template-panel.is-collapsed .panel-chevron,
+.history-panel.is-collapsed .panel-chevron {
   transform: rotate(45deg);
 }
 
-.template-list {
+.template-list,
+.history-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  max-height: 132px;
   overflow: hidden;
   transition:
     max-height 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
     opacity 180ms ease;
 }
 
-.template-panel.is-collapsed .template-list {
+.template-list {
+  max-height: 132px;
+}
+
+.history-list {
+  max-height: 210px;
+}
+
+.template-panel.is-collapsed .template-list,
+.history-panel.is-collapsed .history-list {
   max-height: 0;
   opacity: 0;
 }
@@ -314,12 +325,13 @@ button {
 
 .template-item,
 .history-item {
+  align-items: center;
   background: transparent;
   border: 0;
   border-bottom: 1px solid rgba(48, 48, 45, 0.16);
   border-radius: 0;
   color: rgba(44, 44, 41, 0.66);
-  display: block;
+  display: flex;
   font-size: 14px;
   font-weight: 700;
   flex: none;
@@ -348,11 +360,30 @@ button {
   font-weight: 900;
 }
 
+.history-item.is-active {
+  background: rgba(48, 48, 45, 0.08);
+  border-bottom-color: rgba(48, 48, 45, 0.24);
+  box-shadow: none;
+  font-weight: 900;
+}
+
+.history-item.is-empty {
+  color: rgba(44, 44, 41, 0.54);
+  cursor: default;
+  pointer-events: none;
+}
+
 .template-item:hover,
 .history-item:hover {
   background: rgba(255, 255, 255, 0.24);
   color: rgba(26, 26, 24, 0.86);
   transform: translateX(3px);
+}
+
+.history-item.is-empty:hover {
+  background: transparent;
+  color: rgba(44, 44, 41, 0.54);
+  transform: none;
 }
 
 .stage {

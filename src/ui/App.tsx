@@ -11,6 +11,7 @@ export function App() {
   const [status, setStatus] = useState("等待上传素材");
   const [isBusy, setIsBusy] = useState(false);
   const [templateListOpen, setTemplateListOpen] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(true);
   const [frameOpen, setFrameOpen] = useState(true);
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -128,17 +129,43 @@ export function App() {
           </div>
         </section>
 
-        <section className="panel">
-          <h2>历史记录</h2>
-          {recentProjects.length === 0 ? (
-            <p className="muted">暂无本地项目</p>
-          ) : (
-            recentProjects.slice(0, 5).map((item) => (
-              <button className="history-item" key={item.id} onClick={() => setProject(item)}>
-                {item.name}
-              </button>
-            ))
-          )}
+        <section className={`panel history-panel ${historyOpen ? "is-expanded" : "is-collapsed"}`}>
+          <button
+            className="panel-heading"
+            type="button"
+            onClick={() => setHistoryOpen((value) => !value)}
+          >
+            <span>历史记录</span>
+            <span className="panel-chevron" aria-hidden="true" />
+          </button>
+          <div className="history-list">
+            {recentProjects.length === 0 ? (
+              <div className="history-item is-empty">暂无本地项目</div>
+            ) : (
+              recentProjects.slice(0, 5).map((item) => (
+                <button
+                  className={`history-item${project?.id === item.id ? " is-active" : ""}`}
+                  key={item.id}
+                  type="button"
+                  onClick={() => setProject(item)}
+                >
+                  {item.name}
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className={`panel control-panel ${archiveOpen ? "is-expanded" : "is-collapsed"}`}>
+          <button className="panel-heading" type="button" onClick={() => setArchiveOpen((value) => !value)}>
+            <span>Archive</span>
+            <span className="panel-chevron" aria-hidden="true" />
+          </button>
+          <div className="panel-content">
+            <Field label="Database" value="IndexedDB" />
+            <Field label="Projects" value={`${recentProjects.length}`} />
+            <Field label="Media" value={mediaAsset?.type ?? "-"} />
+          </div>
         </section>
       </aside>
 
@@ -198,18 +225,6 @@ export function App() {
             <Field label="Background" value={project?.templateParams.canvas.background ?? "-"} />
             <Field label="Round Corner" value={`${project?.templateParams.media.radius ?? 0}`} />
             <Field label="Border" value={`${project?.templateParams.media.borderWidth ?? 0}`} />
-          </div>
-        </section>
-
-        <section className={`panel control-panel ${archiveOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button className="panel-heading" type="button" onClick={() => setArchiveOpen((value) => !value)}>
-            <span>Archive</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
-          <div className="panel-content">
-            <Field label="Database" value="IndexedDB" />
-            <Field label="Projects" value={`${recentProjects.length}`} />
-            <Field label="Media" value={mediaAsset?.type ?? "-"} />
           </div>
         </section>
       </aside>

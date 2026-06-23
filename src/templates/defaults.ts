@@ -26,14 +26,14 @@ export const defaultTemplateParams: TemplateParams = {
   text: {
     title: "高级展示卡片",
     subtitle: "上传素材后自动生成",
-    credit: "Made with ImgVideoFrame",
+    credit: "Made by FrameForge",
     titleColor: "#dd684f"
   }
 };
 
 export const starterTemplate = {
-  id: "minimal-poster-card",
-  name: "极简海报卡",
-  family: "minimal-card"
+  id: "frameforge-signature",
+  name: "FrameForge Signature",
+  family: "refined-blur-frame"
 };
 

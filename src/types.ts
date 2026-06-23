@@ -29,6 +29,15 @@ export type ShadowConfig = {
   opacity: number;
 };
 
+export type GradientTone = "white" | "black";
+
+export type RefinedFrameConfig = {
+  cropWidth: number;
+  cropHeight: number;
+  backgroundBlur: number;
+  gradientTone: GradientTone;
+};
+
 export type TemplateParams = {
   canvas: {
     ratio: CanvasRatio;
@@ -48,6 +57,7 @@ export type TemplateParams = {
     credit: string;
     titleColor: string;
   };
+  refinedFrame?: RefinedFrameConfig;
 };
 
 export type Project = {

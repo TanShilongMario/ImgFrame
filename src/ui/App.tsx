@@ -1,19 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildGalleryBatch, getDemoPreset, type GalleryEntry } from "../gallery/catalog";
+import { useOrchestratedNavigation } from "../hooks/useOrchestratedNavigation";
 import { createMediaAsset } from "../media/metadata";
-import { createProjectFromMedia } from "../project/createProject";
+import {
+  applyGalleryToProject,
+  createProjectFromGallery,
+  createProjectFromMedia,
+  shuffleProjectParams
+} from "../project/createProject";
 import { mediaRepository, projectRepository, settingsRepository } from "../storage/repositories";
 import type { MediaAsset, Project } from "../types";
+import { EditorSection } from "./EditorSection";
+import { GallerySection } from "./GallerySection";
+import { HeroPage, type CeremonyPhase } from "./HeroPage";
+
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 export function App() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { activeSection, editorRailsVisible, navigateTo } = useOrchestratedNavigation(scrollRef);
+  const showEditorRails = editorRailsVisible && activeSection === "editor";
   const [project, setProject] = useState<Project | null>(null);
   const [mediaAsset, setMediaAsset] = useState<MediaAsset | null>(null);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [status, setStatus] = useState("等待上传素材");
   const [isBusy, setIsBusy] = useState(false);
+  const [ceremonyPhase, setCeremonyPhase] = useState<CeremonyPhase>("idle");
+  const [activeDemoId, setActiveDemoId] = useState<string | undefined>();
+  const [galleryBatchSeed, setGalleryBatchSeed] = useState(() => Date.now());
   const [templateListOpen, setTemplateListOpen] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(true);
   const [frameOpen, setFrameOpen] = useState(true);
   const [archiveOpen, setArchiveOpen] = useState(false);
+
+  const galleryEntries = useMemo(() => buildGalleryBatch(galleryBatchSeed), [galleryBatchSeed]);
 
   useEffect(() => {
     void restoreLastSession();
@@ -34,6 +58,14 @@ export function App() {
       }
     };
   }, [mediaUrl]);
+
+  const editorDemoFill = useMemo(() => {
+    if (mediaAsset || !activeDemoId) {
+      return undefined;
+    }
+
+    return getDemoPreset(activeDemoId).fill;
+  }, [activeDemoId, mediaAsset]);
 
   async function restoreLastSession() {
     const [settings, projects] = await Promise.all([
@@ -62,181 +94,231 @@ export function App() {
     setStatus("已恢复上次项目");
   }
 
-  async function handleFileChange(file?: File) {
-    if (!file) {
+  async function saveProjectToAlbum(nextProject: Project) {
+    await projectRepository.save(nextProject);
+    await settingsRepository.saveDefault({
+      id: "default",
+      lastProjectId: nextProject.id,
+      preferredRatio: nextProject.templateParams.canvas.ratio,
+      updatedAt: new Date().toISOString()
+    });
+
+    setProject(nextProject);
+    setRecentProjects((items) => [nextProject, ...items.filter((item) => item.id !== nextProject.id)]);
+  }
+
+  function getNextFrameName() {
+    const usedNumbers = recentProjects
+      .map((item) => /^Frame(\d+)$/.exec(item.name)?.[1])
+      .filter((value): value is string => Boolean(value))
+      .map(Number);
+    const nextNumber = usedNumbers.length > 0 ? Math.max(...usedNumbers) + 1 : recentProjects.length + 1;
+
+    return `Frame${nextNumber}`;
+  }
+
+  async function handleSaveToAlbum() {
+    if (!project) {
       return;
     }
 
+    const isAlreadySaved = recentProjects.some((item) => item.id === project.id);
+    await saveProjectToAlbum({
+      ...project,
+      name: isAlreadySaved ? project.name : getNextFrameName(),
+      updatedAt: new Date().toISOString()
+    });
+    setStatus("已保存至画册");
+  }
+
+  async function handleRenameProject(projectId: string, name: string) {
+    const nextName = name.trim().slice(0, 32);
+    const target = recentProjects.find((item) => item.id === projectId);
+
+    if (!target || !nextName || target.name === nextName) {
+      return;
+    }
+
+    const renamedProject = {
+      ...target,
+      name: nextName,
+      updatedAt: new Date().toISOString()
+    };
+
+    await projectRepository.save(renamedProject);
+    setRecentProjects((items) => items.map((item) => (item.id === projectId ? renamedProject : item)));
+
+    if (project?.id === projectId) {
+      setProject((current) => (current ? { ...current, name: nextName } : current));
+    }
+
+    setStatus(`已重命名为 ${nextName}`);
+  }
+
+  async function loadProject(selected: Project) {
+    setProject(selected);
+
+    if (selected.mediaAssetId) {
+      const asset = await mediaRepository.get(selected.mediaAssetId);
+      setMediaAsset(asset ?? null);
+      setActiveDemoId(undefined);
+    } else {
+      setMediaAsset(null);
+    }
+
+    setStatus(`已打开 ${selected.name}`);
+    void navigateTo("editor");
+  }
+
+  async function ingestFile(file: File, options?: { ceremonial?: boolean }) {
     setIsBusy(true);
-    setStatus("正在读取素材");
+
+    if (options?.ceremonial) {
+      setCeremonyPhase("reading");
+      setStatus("正在读取素材");
+    } else {
+      setStatus("正在读取素材");
+    }
 
     try {
+      if (options?.ceremonial) {
+        await wait(700);
+      }
+
       const asset = await createMediaAsset(file);
+
+      if (options?.ceremonial) {
+        setCeremonyPhase("transforming");
+        setStatus("正在生成展示卡片");
+        await wait(900);
+      }
+
       const nextProject = createProjectFromMedia(asset);
       await mediaRepository.save(asset);
-      await projectRepository.save(nextProject);
-      await settingsRepository.saveDefault({
-        id: "default",
-        lastProjectId: nextProject.id,
-        preferredRatio: nextProject.templateParams.canvas.ratio,
-        updatedAt: new Date().toISOString()
-      });
-
-      setMediaAsset(asset);
       setProject(nextProject);
-      setRecentProjects((items) => [nextProject, ...items]);
-      setStatus("已创建本地项目，并写入 IndexedDB");
+      setMediaAsset(asset);
+      setActiveDemoId(undefined);
+      setStatus(options?.ceremonial ? "生成完成，进入编辑器" : "已创建当前项目");
+
+      if (options?.ceremonial) {
+        setCeremonyPhase("done");
+        await wait(500);
+        await navigateTo("editor");
+        setCeremonyPhase("idle");
+      }
     } catch (error) {
+      setCeremonyPhase("idle");
       setStatus(error instanceof Error ? error.message : "素材读取失败");
     } finally {
       setIsBusy(false);
     }
   }
 
+  async function handleUpload(file?: File, options?: { ceremonial?: boolean; fromHero?: boolean }) {
+    if (!file) {
+      return;
+    }
+
+    const ceremonial = options?.ceremonial ?? options?.fromHero ?? false;
+    await ingestFile(file, { ceremonial });
+  }
+
+  function updateProject(nextProject: Project) {
+    setProject(nextProject);
+    setStatus("项目已更新，尚未保存");
+  }
+
+  function handleShuffleParams() {
+    if (!project) {
+      return;
+    }
+
+    updateProject(shuffleProjectParams(project));
+    setStatus("已在当前模板内随机参数");
+  }
+
+  function handleDownloadResult() {
+    if (!project) {
+      return;
+    }
+
+    setStatus("下载结果图功能待接入高清导出");
+  }
+
+  async function handleApplyGalleryEntry(entry: GalleryEntry) {
+    setActiveDemoId(entry.demoId);
+
+    const nextProject = project
+      ? applyGalleryToProject(project, entry)
+      : createProjectFromGallery(entry);
+
+    setProject(nextProject);
+    setStatus(`已套用 ${entry.label}`);
+    void navigateTo("editor");
+  }
+
+  function handleRefreshGalleryBatch() {
+    setGalleryBatchSeed(Date.now());
+  }
+
   return (
-    <main className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div>
-            <h1>Image Card</h1>
-            <p>High resolution frame</p>
-          </div>
-        </div>
-
-        <label className="upload-button">
-          <input
-            accept="image/*,video/*"
-            disabled={isBusy}
-            type="file"
-            onChange={(event) => void handleFileChange(event.target.files?.[0])}
-          />
-          上传素材
-        </label>
-
-        <section className={`panel template-panel ${templateListOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button
-            className="panel-heading"
-            type="button"
-            onClick={() => setTemplateListOpen((value) => !value)}
-          >
-            <span>模板画廊</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
-          <div className="template-list">
-            <button className="template-item is-active">Minimalist</button>
-            <button className="template-item">Glass Card</button>
-            <button className="template-item">Soft Layer</button>
-          </div>
-        </section>
-
-        <section className={`panel history-panel ${historyOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button
-            className="panel-heading"
-            type="button"
-            onClick={() => setHistoryOpen((value) => !value)}
-          >
-            <span>历史记录</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
-          <div className="history-list">
-            {recentProjects.length === 0 ? (
-              <div className="history-item is-empty">暂无本地项目</div>
-            ) : (
-              recentProjects.slice(0, 5).map((item) => (
-                <button
-                  className={`history-item${project?.id === item.id ? " is-active" : ""}`}
-                  key={item.id}
-                  type="button"
-                  onClick={() => setProject(item)}
-                >
-                  {item.name}
-                </button>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className={`panel control-panel ${archiveOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button className="panel-heading" type="button" onClick={() => setArchiveOpen((value) => !value)}>
-            <span>Archive</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
-          <div className="panel-content">
-            <Field label="Database" value="IndexedDB" />
-            <Field label="Projects" value={`${recentProjects.length}`} />
-            <Field label="Media" value={mediaAsset?.type ?? "-"} />
-          </div>
-        </section>
-      </aside>
-
-      <section className="stage">
-        {!project ? (
-          <label className="hero-dropzone">
-            <input
-              accept="image/*,video/*"
-              disabled={isBusy}
-              type="file"
-              onChange={(event) => void handleFileChange(event.target.files?.[0])}
-            />
-            <span className="upload-glyph" aria-hidden="true" />
-            <span className="hero-action">上传图片</span>
-          </label>
-        ) : (
-          <div className="canvas-preview" style={{ background: project.templateParams.canvas.background }}>
-            <p className="poster-subtitle">{project.templateParams.text.subtitle}</p>
-            <div
-              className="media-card"
-              style={{
-                borderColor: project.templateParams.media.borderColor,
-                borderRadius: project.templateParams.media.radius,
-                borderWidth: project.templateParams.media.borderWidth,
-                boxShadow: `0 ${project.templateParams.media.shadow.offsetY}px ${project.templateParams.media.shadow.blur}px rgba(24, 24, 24, ${project.templateParams.media.shadow.opacity})`
-              }}
-            >
-              {mediaUrl && mediaAsset?.type === "image" ? (
-                <img alt={mediaAsset.name} src={mediaUrl} />
-              ) : mediaUrl ? (
-                <video muted playsInline controls src={mediaUrl} />
-              ) : (
-                <div className="media-placeholder">素材预览</div>
-              )}
-            </div>
-            <h2 style={{ color: project.templateParams.text.titleColor }}>
-              {project.templateParams.text.title}
-            </h2>
-            <p className="credit">{project.templateParams.text.credit}</p>
-          </div>
-        )}
+    <div className="scroll-app" ref={scrollRef}>
+      <section className="scroll-section hero-section" data-section="hero">
+        <HeroPage
+          ceremonyPhase={ceremonyPhase}
+          isBusy={isBusy}
+          onScrollDown={() => navigateTo("editor")}
+          onUpload={(file) => void handleUpload(file, { ceremonial: true, fromHero: true })}
+        />
       </section>
 
-      <aside className="inspector">
-        <section className="inspector-summary">
-          <h2>Design</h2>
-          <p>{status}</p>
-        </section>
+      <section className="scroll-section editor-section" data-section="editor">
+        <EditorSection
+          archiveOpen={archiveOpen}
+          demoFill={editorDemoFill}
+          frameOpen={frameOpen}
+          historyOpen={historyOpen}
+          isBusy={isBusy}
+          editorRailsVisible={showEditorRails}
+          mediaAsset={mediaAsset}
+          mediaUrl={mediaUrl}
+          project={project}
+          recentProjects={recentProjects}
+          status={status}
+          templateListOpen={templateListOpen}
+          onNavigate={navigateTo}
+          onSelectProject={(item) => void loadProject(item)}
+          onDownloadResult={handleDownloadResult}
+          onSaveToAlbum={() => void handleSaveToAlbum()}
+          onShuffleParams={handleShuffleParams}
+          onToggleArchive={() => setArchiveOpen((value) => !value)}
+          onToggleFrame={() => setFrameOpen((value) => !value)}
+          onToggleHistory={() => setHistoryOpen((value) => !value)}
+          onToggleTemplateList={() => setTemplateListOpen((value) => !value)}
+          onRenameProject={(projectId, name) => void handleRenameProject(projectId, name)}
+          onUpdateTemplateParams={(params) => {
+            if (!project) {
+              return;
+            }
 
-        <section className={`panel control-panel ${frameOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button className="panel-heading" type="button" onClick={() => setFrameOpen((value) => !value)}>
-            <span>Frame</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
-          <div className="panel-content">
-            <Field label="Ratio" value={project?.templateParams.canvas.ratio ?? "-"} />
-            <Field label="Background" value={project?.templateParams.canvas.background ?? "-"} />
-            <Field label="Round Corner" value={`${project?.templateParams.media.radius ?? 0}`} />
-            <Field label="Border" value={`${project?.templateParams.media.borderWidth ?? 0}`} />
-          </div>
-        </section>
-      </aside>
-    </main>
-  );
-}
+            updateProject({
+              ...project,
+              templateParams: params,
+              updatedAt: new Date().toISOString()
+            });
+          }}
+          onUpload={(file) => void handleUpload(file)}
+        />
+      </section>
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="field">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <section className="scroll-section gallery-section" data-section="gallery">
+        <GallerySection
+          entries={galleryEntries}
+          onApplyEntry={(entry) => void handleApplyGalleryEntry(entry)}
+          onNavigate={navigateTo}
+          onRefreshBatch={handleRefreshGalleryBatch}
+        />
+      </section>
     </div>
   );
 }

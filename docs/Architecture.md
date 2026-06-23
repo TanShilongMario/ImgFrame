@@ -1,8 +1,8 @@
-# ImgVideoFrame 技术架构文档
+# FrameForge 技术架构文档
 
 ## 1. 架构目标
 
-ImgVideoFrame 的技术架构需要服务三个核心目标：
+FrameForge 的技术架构需要服务三个核心目标：
 
 1. 快速生成高质量预览。
 2. 稳定导出高清图片和视频。
@@ -118,6 +118,41 @@ type TemplateDefinition = {
 ```
 
 这样可以保持内部能力充足，同时避免用户界面变复杂。
+
+### 4.2.1 模板与参数的关系
+
+FrameForge 的模板系统遵循“模板定义决定结构，模板参数决定表现”的关系。
+
+```text
+TemplateDefinition
+  ├─ id / name / family：模板身份与模板族
+  ├─ baseParams：该模板的默认安全参数
+  ├─ exposedControls：右侧面板允许用户调整的参数定义
+  ├─ randomRules：随机按钮可修改的参数范围
+  └─ renderer：该模板族对应的渲染组件或渲染分支
+
+Project
+  ├─ templateId：当前使用哪个模板定义
+  └─ templateParams：当前项目保存的一份参数快照
+```
+
+后续新增模板时，不应把所有模板都塞进同一个巨型预览组件。推荐按模板族扩展：
+
+1. 在 `templateRegistry` 增加一个 `TemplateDefinition`，声明模板 id、名称、family 和 `baseParams`。
+2. 如果是新结构模板，给它新增专属参数段，例如 `refinedFrame`；通用参数仍放在 `canvas`、`media`、`text`。
+3. 在随机规则里只随机该模板允许变化的参数，避免生成破坏设计的组合。
+4. 在右侧参数面板只暴露 `exposedControls` 对应的用户参数，内部参数保持不可见。
+5. 在预览层按 `family` 分发到对应 renderer，模板变体优先通过参数变化实现，而不是复制大量相似模板。
+
+当前 `FrameForge Signature` 的参数语义：
+
+```text
+cropWidth: 0-50，表示横向裁掉的总百分比；0 = 不裁剪、撑满，33 = 中间图显示 67% 宽。
+cropHeight: 0-50，表示纵向裁掉的总百分比；0 = 上下贴满，20 = 上下各裁 10%。
+backgroundBlur: 背景层高斯模糊强度。
+gradientTone: 渐变为 white 或 black，并联动底部文字颜色。
+text.credit: 模板底部文字内容，受字符数限制。
+```
 
 ### 4.3 图层模型
 

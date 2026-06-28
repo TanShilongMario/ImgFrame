@@ -1,6 +1,8 @@
 export type MediaType = "image" | "video";
 
-export type CanvasRatio = "1:1" | "4:5" | "3:4" | "9:16" | "16:9";
+export type CanvasRatio = "1:1" | "4:5" | "4:3" | "3:4" | "9:16" | "16:9";
+
+export type RefinedCanvasRatio = CanvasRatio | "auto";
 
 export type CropConfig = {
   x: number;
@@ -32,6 +34,7 @@ export type ShadowConfig = {
 export type GradientTone = "white" | "black";
 
 export type RefinedFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
   cropWidth: number;
   cropHeight: number;
   backgroundBlur: number;
@@ -79,7 +82,7 @@ export type HistoryRecord = {
 
 export type AppSettings = {
   id: "default";
-  lastProjectId?: string;
+  lastProject?: Project;
   preferredRatio: CanvasRatio;
   updatedAt: string;
 };

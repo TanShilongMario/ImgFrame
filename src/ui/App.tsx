@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildGalleryBatch, getDemoPreset, type GalleryEntry } from "../gallery/catalog";
+import { buildGalleryBatch, type GalleryEntry } from "../gallery/catalog";
 import { useOrchestratedNavigation } from "../hooks/useOrchestratedNavigation";
+import { analyzeImageFile } from "../media/analyzeImage";
 import { createMediaAsset } from "../media/metadata";
 import {
   applyGalleryToProject,
   createProjectFromGallery,
   createProjectFromMedia,
+  normalizeProject,
   shuffleProjectParams
 } from "../project/createProject";
+import { applyMagicModeParams } from "../project/magicMode";
 import { mediaRepository, projectRepository, settingsRepository } from "../storage/repositories";
 import type { MediaAsset, Project } from "../types";
+import { createId } from "../utils/id";
+import { downloadBlob, sanitizeFilename } from "../export/canvasUtils";
+import { exportProjectImage } from "../export/exportProjectImage";
+import { AlbumSection } from "./AlbumSection";
 import { EditorSection } from "./EditorSection";
 import { GallerySection } from "./GallerySection";
-import { HeroPage, type CeremonyPhase } from "./HeroPage";
-
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
+import { HeroPage, type HeroUploadOptions } from "./HeroPage";
+import { SiteHeader } from "./components/SiteHeader";
 
 export function App() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -29,11 +31,8 @@ export function App() {
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [status, setStatus] = useState("等待上传素材");
   const [isBusy, setIsBusy] = useState(false);
-  const [ceremonyPhase, setCeremonyPhase] = useState<CeremonyPhase>("idle");
-  const [activeDemoId, setActiveDemoId] = useState<string | undefined>();
   const [galleryBatchSeed, setGalleryBatchSeed] = useState(() => Date.now());
   const [templateListOpen, setTemplateListOpen] = useState(true);
-  const [historyOpen, setHistoryOpen] = useState(true);
   const [frameOpen, setFrameOpen] = useState(true);
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -42,6 +41,28 @@ export function App() {
   useEffect(() => {
     void restoreLastSession();
   }, []);
+
+  const autosaveTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!project) {
+      return;
+    }
+
+    window.clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = window.setTimeout(() => {
+      void (async () => {
+        await settingsRepository.saveDefault({
+          id: "default",
+          lastProject: project,
+          preferredRatio: project.templateParams.canvas.ratio,
+          updatedAt: new Date().toISOString()
+        });
+      })();
+    }, 600);
+
+    return () => window.clearTimeout(autosaveTimerRef.current);
+  }, [project]);
 
   const mediaUrl = useMemo(() => {
     if (!mediaAsset) {
@@ -59,46 +80,34 @@ export function App() {
     };
   }, [mediaUrl]);
 
-  const editorDemoFill = useMemo(() => {
-    if (mediaAsset || !activeDemoId) {
-      return undefined;
-    }
-
-    return getDemoPreset(activeDemoId).fill;
-  }, [activeDemoId, mediaAsset]);
-
   async function restoreLastSession() {
     const [settings, projects] = await Promise.all([
       settingsRepository.getDefault(),
       projectRepository.list()
     ]);
-    const sortedProjects = projects.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const sortedProjects = projects
+      .map(normalizeProject)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     setRecentProjects(sortedProjects);
 
-    if (!settings?.lastProjectId) {
-      return;
+    if (settings?.lastProject) {
+      const restored = normalizeProject(settings.lastProject);
+      setProject(restored);
+
+      if (restored.mediaAssetId) {
+        const asset = await mediaRepository.get(restored.mediaAssetId);
+        setMediaAsset(asset ?? null);
+      }
+
+      setStatus("已恢复上次项目");
     }
-
-    const lastProject = sortedProjects.find((item) => item.id === settings.lastProjectId);
-    if (!lastProject) {
-      return;
-    }
-
-    setProject(lastProject);
-
-    if (lastProject.mediaAssetId) {
-      const asset = await mediaRepository.get(lastProject.mediaAssetId);
-      setMediaAsset(asset ?? null);
-    }
-
-    setStatus("已恢复上次项目");
   }
 
   async function saveProjectToAlbum(nextProject: Project) {
     await projectRepository.save(nextProject);
     await settingsRepository.saveDefault({
       id: "default",
-      lastProjectId: nextProject.id,
+      lastProject: nextProject,
       preferredRatio: nextProject.templateParams.canvas.ratio,
       updatedAt: new Date().toISOString()
     });
@@ -155,72 +164,117 @@ export function App() {
     setStatus(`已重命名为 ${nextName}`);
   }
 
-  async function loadProject(selected: Project) {
-    setProject(selected);
+  async function handleDeleteProject(projectId: string) {
+    const target = recentProjects.find((item) => item.id === projectId);
+    if (!target) {
+      return;
+    }
 
-    if (selected.mediaAssetId) {
-      const asset = await mediaRepository.get(selected.mediaAssetId);
+    await projectRepository.remove(projectId);
+    setRecentProjects((items) => items.filter((item) => item.id !== projectId));
+
+    if (project?.id === projectId) {
+      setProject(null);
+      setMediaAsset(null);
+    }
+
+    setStatus(`已删除 ${target.name}`);
+  }
+
+  async function handleDuplicateProject(projectId: string) {
+    const source = recentProjects.find((item) => item.id === projectId);
+    if (!source) {
+      return;
+    }
+
+    const duplicateNameBase = `${source.name} Copy`;
+    const usedNames = new Set(recentProjects.map((item) => item.name));
+    let duplicateName = duplicateNameBase;
+    let seq = 2;
+    while (usedNames.has(duplicateName)) {
+      duplicateName = `${duplicateNameBase} ${seq}`;
+      seq += 1;
+    }
+
+    const now = new Date().toISOString();
+    const duplicated: Project = {
+      ...source,
+      id: createId("project"),
+      name: duplicateName,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await projectRepository.save(duplicated);
+    setRecentProjects((items) => [duplicated, ...items]);
+    setStatus(`已新建副本 ${duplicateName}`);
+  }
+
+  async function loadProject(selected: Project) {
+    const normalized = normalizeProject(selected);
+    setProject(normalized);
+
+    if (normalized.mediaAssetId) {
+      const asset = await mediaRepository.get(normalized.mediaAssetId);
       setMediaAsset(asset ?? null);
-      setActiveDemoId(undefined);
     } else {
       setMediaAsset(null);
     }
 
-    setStatus(`已打开 ${selected.name}`);
+    setStatus(`已打开 ${normalized.name}`);
     void navigateTo("editor");
   }
 
-  async function ingestFile(file: File, options?: { ceremonial?: boolean }) {
+  async function ingestFile(file: File) {
     setIsBusy(true);
-
-    if (options?.ceremonial) {
-      setCeremonyPhase("reading");
-      setStatus("正在读取素材");
-    } else {
-      setStatus("正在读取素材");
-    }
+    setStatus("正在读取素材");
 
     try {
-      if (options?.ceremonial) {
-        await wait(700);
-      }
-
       const asset = await createMediaAsset(file);
-
-      if (options?.ceremonial) {
-        setCeremonyPhase("transforming");
-        setStatus("正在生成展示卡片");
-        await wait(900);
-      }
-
       const nextProject = createProjectFromMedia(asset);
       await mediaRepository.save(asset);
       setProject(nextProject);
       setMediaAsset(asset);
-      setActiveDemoId(undefined);
-      setStatus(options?.ceremonial ? "生成完成，进入编辑器" : "已创建当前项目");
-
-      if (options?.ceremonial) {
-        setCeremonyPhase("done");
-        await wait(500);
-        await navigateTo("editor");
-        setCeremonyPhase("idle");
-      }
+      setStatus("已创建当前项目");
     } catch (error) {
-      setCeremonyPhase("idle");
       setStatus(error instanceof Error ? error.message : "素材读取失败");
     } finally {
       setIsBusy(false);
     }
   }
 
-  async function handleUpload(file?: File, options?: { ceremonial?: boolean; fromHero?: boolean }) {
+  async function handleMagicFrame(file: File, options: HeroUploadOptions) {
+    setIsBusy(true);
+    setStatus("正在生成展示卡片");
+
+    try {
+      const asset = await createMediaAsset(file);
+      let templateParams = options.previewParams;
+      const analysis = await analyzeImageFile(file);
+      templateParams = applyMagicModeParams(templateParams, analysis);
+
+      const nextProject = createProjectFromMedia(asset, {
+        templateId: options.templateId,
+        templateParams
+      });
+      await mediaRepository.save(asset);
+      setProject(nextProject);
+      setMediaAsset(asset);
+      setStatus("生成完成，进入编辑器");
+      await navigateTo("editor");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "素材读取失败");
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleUpload(file?: File) {
     if (!file) {
       return;
     }
 
-    const ceremonial = options?.ceremonial ?? options?.fromHero ?? false;
-    await ingestFile(file, { ceremonial });
+    await ingestFile(file);
   }
 
   function updateProject(nextProject: Project) {
@@ -237,17 +291,32 @@ export function App() {
     setStatus("已在当前模板内随机参数");
   }
 
-  function handleDownloadResult() {
+  async function handleDownloadResult() {
     if (!project) {
       return;
     }
 
-    setStatus("下载结果图功能待接入高清导出");
+    if (!mediaAsset || !mediaUrl) {
+      setStatus("请先上传素材后再下载");
+      return;
+    }
+
+    setIsBusy(true);
+    setStatus("正在导出结果图...");
+
+    try {
+      const blob = await exportProjectImage(project, mediaAsset, mediaUrl);
+      const filename = `${sanitizeFilename(project.name)}.png`;
+      downloadBlob(blob, filename);
+      setStatus("结果图已下载");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "导出失败");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleApplyGalleryEntry(entry: GalleryEntry) {
-    setActiveDemoId(entry.demoId);
-
     const nextProject = project
       ? applyGalleryToProject(project, entry)
       : createProjectFromGallery(entry);
@@ -262,40 +331,36 @@ export function App() {
   }
 
   return (
-    <div className="scroll-app" ref={scrollRef}>
-      <section className="scroll-section hero-section" data-section="hero">
+    <>
+      <SiteHeader activeSection={activeSection} onNavigate={navigateTo} />
+      <div className="scroll-app" ref={scrollRef}>
+        <section className="scroll-section hero-section" data-section="hero">
         <HeroPage
-          ceremonyPhase={ceremonyPhase}
           isBusy={isBusy}
+          onMagicFrame={(file, options) => handleMagicFrame(file, options)}
           onScrollDown={() => navigateTo("editor")}
-          onUpload={(file) => void handleUpload(file, { ceremonial: true, fromHero: true })}
         />
       </section>
 
       <section className="scroll-section editor-section" data-section="editor">
         <EditorSection
           archiveOpen={archiveOpen}
-          demoFill={editorDemoFill}
           frameOpen={frameOpen}
-          historyOpen={historyOpen}
           isBusy={isBusy}
           editorRailsVisible={showEditorRails}
           mediaAsset={mediaAsset}
           mediaUrl={mediaUrl}
           project={project}
-          recentProjects={recentProjects}
+          projectsCount={recentProjects.length}
           status={status}
           templateListOpen={templateListOpen}
           onNavigate={navigateTo}
-          onSelectProject={(item) => void loadProject(item)}
-          onDownloadResult={handleDownloadResult}
+          onDownloadResult={() => void handleDownloadResult()}
           onSaveToAlbum={() => void handleSaveToAlbum()}
           onShuffleParams={handleShuffleParams}
           onToggleArchive={() => setArchiveOpen((value) => !value)}
           onToggleFrame={() => setFrameOpen((value) => !value)}
-          onToggleHistory={() => setHistoryOpen((value) => !value)}
           onToggleTemplateList={() => setTemplateListOpen((value) => !value)}
-          onRenameProject={(projectId, name) => void handleRenameProject(projectId, name)}
           onUpdateTemplateParams={(params) => {
             if (!project) {
               return;
@@ -319,6 +384,18 @@ export function App() {
           onRefreshBatch={handleRefreshGalleryBatch}
         />
       </section>
-    </div>
+
+      <section className="scroll-section album-section" data-section="album">
+        <AlbumSection
+          projects={recentProjects}
+          onNavigate={navigateTo}
+          onDeleteProject={(projectId) => void handleDeleteProject(projectId)}
+          onDuplicateProject={(projectId) => void handleDuplicateProject(projectId)}
+          onOpenProject={(item) => void loadProject(item)}
+          onRenameProject={(projectId, name) => void handleRenameProject(projectId, name)}
+        />
+      </section>
+      </div>
+    </>
   );
 }

@@ -147,6 +147,7 @@ Project
 当前 `FrameForge Signature` 的参数语义：
 
 ```text
+画布比例：不使用固定的 canvas.ratio，而是从原图的实际宽高比动态计算，确保出图比例与原图一致。
 cropWidth: 0-50，表示横向裁掉的总百分比；0 = 不裁剪、撑满，33 = 中间图显示 67% 宽。
 cropHeight: 0-50，表示纵向裁掉的总百分比；0 = 上下贴满，20 = 上下各裁 10%。
 backgroundBlur: 背景层高斯模糊强度。

@@ -1,10 +1,11 @@
 import type { AppSettings, HistoryRecord, MediaAsset, Project } from "../types";
-import { getAllRecords, getRecord, putRecord } from "./db";
+import { deleteRecord, getAllRecords, getRecord, putRecord } from "./db";
 
 export const projectRepository = {
   list: () => getAllRecords("projects"),
   get: (id: string) => getRecord("projects", id),
-  save: (project: Project) => putRecord("projects", project)
+  save: (project: Project) => putRecord("projects", project),
+  remove: (id: string) => deleteRecord("projects", id)
 };
 
 export const mediaRepository = {

@@ -1,4 +1,6 @@
 :root {
+  --site-header-height: 56px;
+  --app-viewport-height: calc(100dvh - var(--site-header-height));
   color: #31312e;
   background: #e8e8e5;
   font-family: "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
@@ -55,11 +57,10 @@ button {
   cursor: pointer;
 }
 
-.app-shell,
 .workspace-shell {
   display: grid;
   grid-template-columns: 0 minmax(0, 1fr) 0;
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   position: relative;
@@ -105,7 +106,8 @@ button {
 
 .scroll-app {
   background: transparent;
-  height: 100vh;
+  height: var(--app-viewport-height);
+  margin-top: var(--site-header-height);
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
@@ -114,27 +116,76 @@ button {
   z-index: 0;
 }
 
+.site-header {
+  align-items: center;
+  background: rgba(232, 232, 229, 0.82);
+  backdrop-filter: blur(12px);
+  display: flex;
+  height: var(--site-header-height);
+  justify-content: space-between;
+  left: 0;
+  padding: 0 clamp(24px, 5vw, 72px);
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header-brand {
+  color: #2a2a28;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.site-header-nav {
+  display: flex;
+  gap: clamp(16px, 2vw, 32px);
+}
+
+.site-header-nav-item {
+  background: transparent;
+  border: 0;
+  color: rgba(42, 42, 40, 0.36);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 0;
+  transition: color 220ms ease;
+}
+
+.site-header-nav-item:hover {
+  color: rgba(42, 42, 40, 0.72);
+}
+
+.site-header-nav-item.is-active {
+  color: #2a2a28;
+}
+
 .scroll-section {
-  height: 100vh;
-  min-height: 100vh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
 .hero-section {
   background: transparent;
+  height: 100%;
   position: relative;
 }
 
 .editor-section {
   background: transparent;
+  height: 100%;
   isolation: isolate;
   overflow: hidden;
   position: relative;
 }
 
-.gallery-section {
+.gallery-section,
+.album-section {
   background: transparent;
+  height: 100%;
   isolation: isolate;
   overflow: hidden;
   position: relative;
@@ -163,20 +214,14 @@ button {
 
 .sidebar .workspace-rail-panel::before,
 .inspector .workspace-rail-panel::before {
-  background: rgba(48, 48, 45, 0.24);
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 86px;
+  display: none;
 }
 
 .sidebar,
 .inspector {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -502,7 +547,7 @@ button {
   align-items: center;
   background: transparent;
   display: flex;
-  height: 100vh;
+  height: 100%;
   justify-content: center;
   min-width: 0;
   overflow: hidden;
@@ -515,7 +560,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  height: calc(100vh - 34px);
+  height: 100%;
   justify-content: center;
   max-height: none;
   max-width: 900px;
@@ -541,6 +586,7 @@ button {
   border: 0;
   border-radius: 999px;
   color: #f5f5f3;
+  cursor: pointer;
   display: inline-flex;
   font-size: 13px;
   font-weight: 900;
@@ -552,6 +598,10 @@ button {
   transition:
     box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+.stage-action-input {
+  display: none;
 }
 
 .stage-action-primary {
@@ -599,7 +649,7 @@ button {
   flex-direction: column;
   gap: 0;
   justify-content: center;
-  height: min(680px, calc(100vh - 148px));
+  height: min(680px, calc(var(--app-viewport-height) - 148px));
   min-height: 0;
   overflow: hidden;
   padding: 48px;
@@ -741,7 +791,7 @@ button {
   flex-direction: column;
   gap: 26px;
   justify-content: center;
-  max-height: calc(100vh - 64px);
+  max-height: calc(var(--app-viewport-height) - 64px);
   padding: 56px;
   position: relative;
   width: min(520px, 100%);
@@ -853,9 +903,23 @@ button {
 
 .segmented-control {
   background: rgba(48, 48, 45, 0.08);
+  border-radius: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
+  width: 239px;
+}
+
+.segmented-control-wrap {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.field.field-control {
+  align-items: stretch;
+  display: grid;
+  gap: 10px;
+  min-height: auto;
+  padding: 14px 24px;
 }
 
 .segmented-control button {
@@ -891,6 +955,22 @@ button {
   min-height: 34px;
   outline: 0;
   padding: 0 10px;
+}
+
+.text-control textarea {
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(48, 48, 45, 0.18);
+  border-radius: 10px;
+  color: rgba(44, 44, 41, 0.82);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+  min-height: 52px;
+  outline: 0;
+  padding: 12px;
+  resize: vertical;
+  width: 239px;
 }
 
 .text-control input:focus {
@@ -938,7 +1018,7 @@ button {
 .hero-page {
   --hero-asset-ratio: 0.75;
   --hero-page-pad: clamp(32px, 5vw, 72px);
-  --hero-showcase-height: min(1128px, calc(100vh - var(--hero-page-pad) * 2));
+  --hero-showcase-height: min(1128px, calc(var(--app-viewport-height) - var(--hero-page-pad) * 2));
   --hero-template-frame-width: 67%;
 
   align-items: flex-end;
@@ -948,7 +1028,8 @@ button {
   flex-direction: row;
   font-family: "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   gap: clamp(48px, 9vw, 180px);
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100%;
   padding: var(--hero-page-pad);
   position: relative;
 }
@@ -1095,6 +1176,14 @@ button {
   max-width: 38ch;
 }
 
+.hero-upload-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  margin-top: 4px;
+}
+
 .hero-upload {
   align-items: center;
   align-self: flex-start;
@@ -1104,78 +1193,279 @@ button {
   color: #f5f5f3;
   cursor: pointer;
   display: inline-flex;
+  flex: 0 0 auto;
   font-size: 14px;
   font-weight: 800;
+  gap: 8px;
   height: 46px;
   justify-content: center;
-  margin-top: 4px;
   padding: 0 24px;
   transition:
     transform 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
-.hero-upload input {
-  display: none;
+.hero-upload:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
 }
 
-.hero-upload:hover {
+.hero-upload-icon {
+  flex: 0 0 auto;
+}
+
+.hero-upload:hover:not(:disabled) {
   box-shadow: 0 14px 32px rgba(24, 24, 24, 0.2);
   transform: translateY(-2px);
 }
 
-.hero-ceremony {
+.hero-upload-hint {
+  color: rgba(42, 42, 40, 0.46);
+  flex: 1 1 180px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.hero-page.is-upload-open .hero-showcase,
+.hero-page.is-upload-open .hero-copy {
+  filter: blur(10px);
+  pointer-events: none;
+  transition: filter 280ms ease;
+}
+
+.hero-page.is-drag-over:not(.is-upload-open) {
+  outline: 2px dashed rgba(42, 42, 40, 0.22);
+  outline-offset: -10px;
+}
+
+.hero-upload-panel {
   align-items: center;
-  backdrop-filter: blur(8px);
-  background: rgba(200, 200, 200, 0.72);
   display: flex;
   inset: 0;
   justify-content: center;
+  padding: 24px;
   position: absolute;
-  z-index: 4;
+  z-index: 6;
 }
 
-.hero-ceremony-card {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(48, 48, 45, 0.14);
-  font-family: "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-  min-width: min(420px, 86vw);
-  padding: 28px 32px;
+.hero-upload-panel-backdrop {
+  backdrop-filter: blur(18px);
+  background: rgba(232, 232, 229, 0.58);
+  border: 0;
+  cursor: pointer;
+  inset: 0;
+  position: absolute;
 }
 
-.hero-ceremony-label {
-  color: rgba(44, 44, 41, 0.72);
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 16px;
+.hero-upload-panel-backdrop:disabled {
+  cursor: default;
 }
 
-.hero-ceremony-bar {
-  background: rgba(48, 48, 45, 0.08);
-  height: 3px;
+.hero-upload-card {
+  background: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 32px;
+  box-shadow:
+    0 28px 80px rgba(24, 24, 24, 0.18),
+    0 8px 24px rgba(24, 24, 24, 0.08);
+  display: flex;
+  flex-direction: column;
+  height: min(560px, calc(var(--app-viewport-height) - 96px));
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  width: min(360px, 88vw);
+  z-index: 1;
+}
+
+.hero-upload-card.is-drag-over {
+  outline: 2px dashed rgba(42, 42, 40, 0.28);
+  outline-offset: 4px;
+}
+
+.hero-upload-frame {
+  background: #cfcfca;
+  border-radius: 24px;
+  box-shadow:
+    inset 0 10px 28px rgba(24, 24, 24, 0.16),
+    inset 0 2px 8px rgba(24, 24, 24, 0.08);
+  flex: 1 1 auto;
+  margin: 14px 14px 0;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
 
-.hero-ceremony-progress {
-  background: rgba(44, 44, 41, 0.82);
+.hero-upload-preview {
   display: block;
   height: 100%;
-  transform-origin: left center;
-  transition: transform 700ms ease;
+  object-fit: cover;
+  object-position: center;
   width: 100%;
 }
 
-.hero-ceremony-progress.is-reading {
-  transform: scaleX(0.34);
+.hero-dot-field {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
 }
 
-.hero-ceremony-progress.is-transforming {
-  transform: scaleX(0.72);
+.hero-upload-ceremony-copy {
+  align-items: center;
+  backdrop-filter: blur(4px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.72) 100%);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  left: 0;
+  padding: 28px 20px 18px;
+  position: absolute;
+  right: 0;
 }
 
-.hero-ceremony-progress.is-done {
+.hero-upload-ceremony-label {
+  color: rgba(42, 42, 40, 0.82);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+}
+
+.hero-upload-ceremony-bar {
+  background: rgba(42, 42, 40, 0.1);
+  border-radius: 999px;
+  height: 4px;
+  overflow: hidden;
+  width: min(220px, 72%);
+}
+
+.hero-upload-ceremony-progress {
+  background: linear-gradient(90deg, #2a2a28 0%, #6b5b4f 100%);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  width: 100%;
+}
+
+.hero-upload-ceremony-progress.is-dots {
+  animation: heroCeremonyProgress 1.1s ease forwards;
+}
+
+.hero-upload-ceremony-progress.is-reading {
+  animation: heroCeremonyProgress 1.2s ease forwards;
+}
+
+.hero-upload-ceremony-progress.is-transforming {
+  animation: heroCeremonyProgress 1.3s ease forwards;
+}
+
+.hero-upload-ceremony-progress.is-done {
   transform: scaleX(1);
+}
+
+@keyframes heroCeremonyProgress {
+  from {
+    transform: scaleX(0.08);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hero-upload-actions {
+  align-items: center;
+  background: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: center;
+  padding: 18px 16px 20px;
+}
+
+.hero-upload-action {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  height: 44px;
+  padding: 0 20px;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.hero-upload-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.hero-upload-action-primary,
+.hero-upload-action-secondary {
+  background: #2a2a28;
+  box-shadow: 0 10px 24px rgba(24, 24, 24, 0.16);
+  color: #f5f5f3;
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.hero-upload-action-primary:hover:not(:disabled),
+.hero-upload-action-secondary:hover:not(:disabled) {
+  box-shadow: 0 14px 28px rgba(24, 24, 24, 0.22);
+  transform: translateY(-1px);
+}
+
+.hero-upload-action-magic {
+  animation: heroMagicBreath 3.2s ease-in-out infinite;
+  background: linear-gradient(135deg, #2a2a28 0%, #5f4f44 34%, #2f2924 68%, #7a6556 100%);
+  background-size: 220% 220%;
+  box-shadow: 0 12px 28px rgba(72, 56, 42, 0.32);
+  color: #fff8f2;
+  flex: 1.2 1 auto;
+}
+
+.hero-upload-action-magic:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.01);
+}
+
+@keyframes heroMagicBreath {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    box-shadow: 0 10px 24px rgba(72, 56, 42, 0.26);
+  }
+
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 0 16px 34px rgba(72, 56, 42, 0.42);
+  }
+}
+
+.hero-hover-card {
+  --hero-hover-rotate: 0deg;
+  transform: rotate(var(--hero-hover-rotate));
+  transition:
+    box-shadow 280ms ease,
+    transform 280ms ease;
+}
+
+.hero-hover-card:hover {
+  box-shadow: 0 22px 56px rgba(24, 24, 24, 0.16);
+}
+
+.hero-raw.hero-hover-card:hover img {
+  box-shadow: 0 22px 56px rgba(24, 24, 24, 0.16);
 }
 
 .scroll-hint {
@@ -1197,7 +1487,7 @@ button {
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 5;
 }
 
 .scroll-hint-section {
@@ -1274,7 +1564,8 @@ button {
   opacity: 1;
 }
 
-.gallery-page {
+.gallery-page,
+.album-page {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1295,12 +1586,11 @@ button {
 }
 
 .gallery-eyebrow {
-  color: rgba(44, 44, 41, 0.46);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.28em;
+  color: rgba(44, 44, 41, 0.88);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
   margin: 0;
-  text-transform: uppercase;
 }
 
 .gallery-lead {
@@ -1314,66 +1604,178 @@ button {
 .gallery-header-actions {
   align-items: center;
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
-.gallery-refresh {
-  background: rgba(44, 44, 41, 0.9);
-  border: 1px solid rgba(44, 44, 41, 0.9);
-  color: #f5f4f0;
-  font-size: 13px;
-  font-weight: 800;
+.nav-action {
+  gap: 6px;
   height: 42px;
+  min-width: 132px;
   padding: 0 18px;
 }
 
-.gallery-header h2 {
-  color: rgba(44, 44, 41, 0.88);
-  font-size: 28px;
-  font-weight: 900;
-  margin: 8px 0 0;
-}
-
-.gallery-grid {
-  display: grid;
+.gallery-scroll-container,
+.album-scroll-container {
   flex: 1;
-  gap: 28px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0 auto;
-  max-width: 1400px;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.gallery-grid,
+.album-grid {
+  column-count: 3;
+  column-gap: 24px;
+  margin: 0 auto;
+  max-width: 1400px;
   padding: 0 64px 40px;
   width: 100%;
 }
 
 .gallery-card {
   background: transparent;
-  border: 1px solid rgba(48, 48, 45, 0.12);
+  border: 0;
+  break-inside: avoid;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 14px;
+  display: block;
+  margin: 0 0 24px;
+  padding: 0;
+  position: relative;
   text-align: left;
   transition:
-    border-color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    transform 180ms ease;
+  width: 100%;
 }
 
 .gallery-card:hover {
-  border-color: rgba(48, 48, 45, 0.28);
-  box-shadow: 0 18px 42px rgba(44, 44, 41, 0.1);
+  box-shadow: 0 18px 42px rgba(44, 44, 41, 0.12);
   transform: translateY(-3px);
 }
 
-.gallery-card-label {
-  color: rgba(44, 44, 41, 0.58);
-  font-size: 12px;
+.album-card {
+  break-inside: avoid;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+.album-card-preview-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.album-card-preview {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  padding: 0;
+  width: 100%;
+}
+
+.album-card-overlay {
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 180ms ease;
+  z-index: 2;
+}
+
+.album-card-preview-wrap:hover .album-card-overlay,
+.album-card-preview-wrap:focus-within .album-card-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.album-card-overlay-bottom {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(24, 24, 24, 0) 0%, rgba(24, 24, 24, 0.62) 100%);
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  left: 0;
+  padding: 28px 14px 12px;
+  position: absolute;
+  right: 0;
+}
+
+.album-card-title-text {
+  color: #ffffff;
+  flex: 1 1 auto;
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-card-name-input {
+  background: rgba(255, 255, 255, 0.92);
+  border: 0;
+  border-radius: 8px;
+  color: #2a2a28;
+  flex: 1 1 auto;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 0;
+  outline: 0;
+  padding: 8px 10px;
+}
+
+.album-card-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.album-card-icon-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 0;
+  border-radius: 999px;
+  color: #2a2a28;
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+  width: 32px;
+}
+
+.album-card-icon-btn:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.album-card-icon-btn.is-danger {
+  color: #ff6b6b;
+}
+
+.album-empty {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+  min-height: 0;
+}
+
+.album-empty-text {
+  color: rgba(44, 44, 41, 0.4);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
 }
 
 .card-preview {
@@ -1397,7 +1799,7 @@ button {
   border-radius: 8px;
   flex: 0 1 auto;
   gap: 22px;
-  height: min(860px, calc(100vh - 112px));
+  height: min(860px, calc(var(--app-viewport-height) - 112px));
   max-height: none;
   max-width: 100%;
   min-height: 0;
@@ -1415,18 +1817,18 @@ button {
 
 .card-preview-gallery,
 .card-preview-thumb {
-  gap: 10px;
-  padding: 12px;
+  gap: 0;
+  padding: 0;
   pointer-events: none;
+  width: 100%;
 }
 
 .card-preview-gallery {
-  gap: 16px;
-  padding: 24px;
+  width: 100%;
 }
 
-.card-preview-gallery .card-preview-title {
-  font-size: 22px;
+.card-preview-gallery.card-preview-refined {
+  width: 100%;
 }
 
 .card-preview-subtitle {
@@ -1621,14 +2023,17 @@ button {
     padding: 32px 20px 20px;
   }
 
-  .gallery-grid {
-    grid-template-columns: 1fr;
+  .gallery-grid,
+  .album-grid {
+    column-count: 1;
+    column-gap: 0;
     padding: 0 20px 40px;
   }
 }
 
 @media (min-width: 981px) and (max-width: 1280px) {
-  .gallery-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .gallery-grid,
+  .album-grid {
+    column-count: 2;
   }
 }

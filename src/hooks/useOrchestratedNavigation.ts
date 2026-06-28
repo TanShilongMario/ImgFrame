@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
-export type AppSection = "hero" | "editor" | "gallery";
+export type AppSection = "hero" | "editor" | "gallery" | "album";
 
 export const SCROLL_MS = 720;
 export const RAIL_MS = 480;
 
-const sections: AppSection[] = ["hero", "editor", "gallery"];
-const innerScrollSelectors = [".gallery-grid", ".workspace-rail-scroll"];
+const sections: AppSection[] = ["hero", "editor", "gallery", "album"];
+const innerScrollSelectors = [".gallery-scroll-container", ".album-scroll-container", ".workspace-rail-scroll"];
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => {
@@ -118,10 +118,17 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
           return;
         }
 
-        if (innerScrollable.classList.contains("gallery-grid")) {
+        if (innerScrollable.classList.contains("gallery-scroll-container") ||
+            innerScrollable.classList.contains("album-scroll-container")) {
           if (direction < 0) {
             event.preventDefault();
-            void navigateTo("editor");
+            const currentIndex = sections.indexOf(activeSectionRef.current);
+            // If we are in album, don't scroll up to gallery
+            if (activeSectionRef.current === "album") {
+              return;
+            }
+            const prevIndex = Math.max(0, currentIndex - 1);
+            void navigateTo(sections[prevIndex]);
           }
 
           return;
@@ -135,6 +142,15 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
       event.preventDefault();
 
       const currentIndex = sections.indexOf(activeSectionRef.current);
+      
+      // Prevent scrolling down from gallery to album, and scrolling up from album to gallery
+      if (activeSectionRef.current === "gallery" && direction > 0) {
+        return;
+      }
+      if (activeSectionRef.current === "album" && direction < 0) {
+        return;
+      }
+
       const nextIndex = Math.min(sections.length - 1, Math.max(0, currentIndex + direction));
 
       if (nextIndex === currentIndex) {

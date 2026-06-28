@@ -1,10 +1,11 @@
-import { Dice5, Download, Save } from "lucide-react";
+import { Dice5, Download, Save, Upload } from "lucide-react";
 
 type StageActionIconProps = {
-  kind: "random" | "save" | "download";
+  kind: "upload" | "random" | "save" | "download";
 };
 
 const iconMap = {
+  upload: Upload,
   random: Dice5,
   save: Save,
   download: Download

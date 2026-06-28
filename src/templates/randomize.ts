@@ -30,6 +30,7 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         credit: pick(refinedCredits)
       },
       refinedFrame: {
+        canvasRatio: base.refinedFrame.canvasRatio,
         cropWidth: range(24, 42),
         cropHeight: range(0, 28),
         backgroundBlur: range(18, 46),

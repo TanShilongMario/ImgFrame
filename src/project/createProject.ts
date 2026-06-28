@@ -1,18 +1,36 @@
 import { createId } from "../utils/id";
-import type { MediaAsset, Project } from "../types";
+import type { MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
 import { randomizeFull, randomizeWithinTemplate } from "../templates/randomize";
 import { getTemplateById } from "../templates/registry";
 
-export function createProjectFromMedia(asset: MediaAsset): Project {
+export function normalizeProject(project: Project): Project {
+  const refined = project.templateParams.refinedFrame as RefinedFrameConfig | undefined;
+  if (refined && (refined as RefinedFrameConfig & { canvasRatio?: unknown }).canvasRatio === undefined) {
+    return {
+      ...project,
+      templateParams: {
+        ...project.templateParams,
+        refinedFrame: { ...refined, canvasRatio: "auto" }
+      }
+    };
+  }
+
+  return project;
+}
+
+export function createProjectFromMedia(
+  asset: MediaAsset,
+  options?: { templateId?: string; templateParams?: TemplateParams }
+): Project {
   const now = new Date().toISOString();
-  const starterTemplate = getTemplateById("frameforge-signature");
+  const starterTemplate = getTemplateById(options?.templateId ?? "frameforge-signature");
 
   return {
     id: createId("project"),
     name: asset.name.replace(/\.[^.]+$/, "") || "未命名项目",
     mediaAssetId: asset.id,
     templateId: starterTemplate.id,
-    templateParams: structuredClone(starterTemplate.baseParams),
+    templateParams: structuredClone(options?.templateParams ?? starterTemplate.baseParams),
     createdAt: now,
     updatedAt: now
   };
@@ -22,7 +40,6 @@ export function createProjectFromGallery(entry: {
   label: string;
   templateId: string;
   params: Project["templateParams"];
-  demoId: string;
 }): Project {
   const now = new Date().toISOString();
 

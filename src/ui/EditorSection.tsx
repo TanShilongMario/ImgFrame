@@ -1,28 +1,23 @@
 import { getTemplateById } from "../templates/registry";
 import type { MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
 import { CardPreview } from "./components/CardPreview";
+import { StageActionButton } from "./components/StageActionButton";
 import { Sidebar } from "./components/Sidebar";
-import { StageActionIcon } from "./components/StageActionIcon";
 
 type EditorSectionProps = {
   project: Project | null;
   mediaAsset: MediaAsset | null;
   mediaUrl?: string;
-  demoFill?: string;
   status: string;
   isBusy: boolean;
   editorRailsVisible: boolean;
-  recentProjects: Project[];
+  projectsCount: number;
   templateListOpen: boolean;
-  historyOpen: boolean;
   archiveOpen: boolean;
   frameOpen: boolean;
   onUpload: (file?: File) => void;
   onNavigate: (section: "hero" | "editor" | "gallery") => void;
-  onSelectProject: (project: Project) => void;
-  onRenameProject: (projectId: string, name: string) => void;
   onToggleTemplateList: () => void;
-  onToggleHistory: () => void;
   onToggleArchive: () => void;
   onToggleFrame: () => void;
   onShuffleParams: () => void;
@@ -35,21 +30,16 @@ export function EditorSection({
   project,
   mediaAsset,
   mediaUrl,
-  demoFill,
   status,
   isBusy,
   editorRailsVisible,
-  recentProjects,
+  projectsCount,
   templateListOpen,
-  historyOpen,
   archiveOpen,
   frameOpen,
   onUpload,
   onNavigate,
-  onSelectProject,
-  onRenameProject,
   onToggleTemplateList,
-  onToggleHistory,
   onToggleArchive,
   onToggleFrame,
   onShuffleParams,
@@ -90,20 +80,12 @@ export function EditorSection({
     <>
       <div className={`workspace-shell${editorRailsVisible ? " is-rails-visible" : ""}`}>
         <Sidebar
-        activeProjectId={project?.id}
         archiveOpen={archiveOpen}
-        historyOpen={historyOpen}
-        isBusy={isBusy}
         mediaType={mediaAsset?.type}
-        projectsCount={recentProjects.length}
-        recentProjects={recentProjects}
+        projectsCount={projectsCount}
         templateListOpen={templateListOpen}
-        onRenameProject={onRenameProject}
-        onSelectProject={onSelectProject}
         onToggleArchive={onToggleArchive}
-        onToggleHistory={onToggleHistory}
         onToggleTemplateList={onToggleTemplateList}
-        onUpload={onUpload}
       />
 
       <section className="stage">
@@ -121,7 +103,6 @@ export function EditorSection({
             </label>
           ) : (
             <CardPreview
-              demoFill={demoFill}
               mediaName={mediaAsset?.name}
               mediaType={mediaAsset?.type}
               mediaUrl={mediaUrl}
@@ -132,50 +113,42 @@ export function EditorSection({
           )}
 
           <div className="stage-actions">
-            <button
-              aria-label="参数随机"
-              className="stage-action"
+            <StageActionButton
+              disabled={isBusy}
+              kind="upload"
+              label="上传素材"
+              title="上传素材"
+              onUpload={onUpload}
+            />
+            <StageActionButton
               disabled={!project}
+              kind="random"
+              label="随机"
               title="参数随机"
-              type="button"
               onClick={onShuffleParams}
-            >
-              <StageActionIcon kind="random" />
-              <span>随机</span>
-            </button>
-            <button
-              aria-label="保存至画册"
-              className="stage-action stage-action-primary"
+            />
+            <StageActionButton
+              className="stage-action-primary"
               disabled={!project}
+              kind="save"
+              label="保存至画册"
               title="保存至画册"
-              type="button"
               onClick={onSaveToAlbum}
-            >
-              <StageActionIcon kind="save" />
-              <span>保存至画册</span>
-            </button>
-            <button
-              aria-label="下载结果图"
-              className="stage-action stage-action-download"
-              disabled={!project}
+            />
+            <StageActionButton
+              className="stage-action-download"
+              disabled={!project || !mediaAsset || isBusy}
+              kind="download"
+              label="下载结果图"
               title="下载结果图"
-              type="button"
               onClick={onDownloadResult}
-            >
-              <StageActionIcon kind="download" />
-              <span>下载结果图</span>
-            </button>
+            />
           </div>
         </div>
       </section>
 
       <aside className="inspector workspace-rail">
         <div className="workspace-rail-panel">
-        <section className="inspector-summary">
-          <h2>Design</h2>
-          <p>{status}</p>
-        </section>
-
         <section className={`panel control-panel ${frameOpen ? "is-expanded" : "is-collapsed"}`}>
           <button className="panel-heading" type="button" onClick={onToggleFrame}>
             <span>Frame</span>
@@ -185,6 +158,21 @@ export function EditorSection({
             <Field label="Template" value={activeTemplate?.name ?? "-"} />
             {refinedFrame ? (
               <>
+                <div className="field field-control">
+                  <span>画布比例</span>
+                  <div className="segmented-control segmented-control-wrap">
+                    {(["16:9", "4:3", "1:1", "3:4", "9:16", "auto"] as const).map((option) => (
+                      <button
+                        key={option}
+                        className={refinedFrame.canvasRatio === option ? "is-active" : ""}
+                        type="button"
+                        onClick={() => updateRefinedFrame({ ...refinedFrame, canvasRatio: option })}
+                      >
+                        {option === "auto" ? "随原图" : option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <RangeControl
                   label="裁剪宽度"
                   max={50}
@@ -233,9 +221,8 @@ export function EditorSection({
                 </div>
                 <label className="field text-control">
                   <span>文字内容</span>
-                  <input
+                  <textarea
                     maxLength={48}
-                    type="text"
                     value={project?.templateParams.text.credit ?? ""}
                     onChange={(event) => updateCredit(event.target.value)}
                   />
@@ -250,6 +237,11 @@ export function EditorSection({
               </>
             )}
           </div>
+        </section>
+
+        <section className="inspector-summary">
+          <h2>Design</h2>
+          <p>{status}</p>
         </section>
         </div>
       </aside>

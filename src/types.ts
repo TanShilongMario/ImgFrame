@@ -1,3 +1,5 @@
+import type { TextFontId } from "./templates/fonts";
+
 export type MediaType = "image" | "video";
 
 export type CanvasRatio = "1:1" | "4:5" | "4:3" | "3:4" | "9:16" | "16:9";
@@ -33,12 +35,56 @@ export type ShadowConfig = {
 
 export type GradientTone = "white" | "black";
 
+export type GridLineTone = "white" | "black";
+
+export type GridCellEffect = "none" | "darken" | "lighten";
+
+export type GridCellEffectEntry = {
+  effect: GridCellEffect;
+  strength: number;
+};
+
+export type GridFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  lineTone: GridLineTone;
+  lineX1: number;
+  lineX2: number;
+  lineY1: number;
+  lineY2: number;
+  seed: number;
+  cellEffects: GridCellEffectEntry[];
+};
+
 export type RefinedFrameConfig = {
   canvasRatio: RefinedCanvasRatio;
   cropWidth: number;
   cropHeight: number;
   backgroundBlur: number;
   gradientTone: GradientTone;
+};
+
+export type GlassTextTone = "white" | "black" | "gray";
+
+export type BandColorChoice = "cream" | "sand" | "mist" | "ink" | "sage" | "system";
+
+export type BandFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  outerMargin: number;
+  bandHeight: number;
+  subtitleSize: number;
+  titleSize: number;
+  bandColor: BandColorChoice;
+  backingColor: BandColorChoice;
+  systemBandHex?: string;
+  systemBackingHex?: string;
+};
+
+export type GlassFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  edgeWidth: number;
+  bottomExtra: number;
+  blur: number;
+  textTone: GlassTextTone;
 };
 
 export type TemplateParams = {
@@ -59,8 +105,12 @@ export type TemplateParams = {
     subtitle: string;
     credit: string;
     titleColor: string;
+    fontFamily: TextFontId;
   };
   refinedFrame?: RefinedFrameConfig;
+  gridFrame?: GridFrameConfig;
+  glassFrame?: GlassFrameConfig;
+  bandFrame?: BandFrameConfig;
 };
 
 export type Project = {

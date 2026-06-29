@@ -1,6 +1,9 @@
 import { getTemplateById } from "../templates/registry";
 import type { MediaAsset, Project } from "../types";
 import { canvasToBlob, loadMediaSource } from "./canvasUtils";
+import { renderBandFrame } from "./renderBandFrame";
+import { renderGlassFrame } from "./renderGlassFrame";
+import { renderGridFrame } from "./renderGridFrame";
 import { renderRefinedBlurFrame } from "./renderRefinedBlurFrame";
 import { renderStandardFrame } from "./renderStandardFrame";
 
@@ -20,10 +23,19 @@ export async function exportProjectImage(
   const template = getTemplateById(project.templateId);
   const media = await loadMediaSource(mediaAsset, mediaUrl);
 
-  const canvas =
-    template.family === "refined-blur-frame"
-      ? renderRefinedBlurFrame(project.templateParams, media, scale)
-      : renderStandardFrame(project.templateParams, media, scale);
+  let canvas: HTMLCanvasElement;
+
+  if (template.family === "refined-blur-frame") {
+    canvas = renderRefinedBlurFrame(project.templateParams, media, scale);
+  } else if (template.family === "grid-frame") {
+    canvas = renderGridFrame(project.templateParams, media, scale);
+  } else if (template.family === "glass-frame") {
+    canvas = renderGlassFrame(project.templateParams, media, scale, format);
+  } else if (template.family === "band-frame") {
+    canvas = renderBandFrame(project.templateParams, media, scale);
+  } else {
+    canvas = renderStandardFrame(project.templateParams, media, scale);
+  }
 
   return canvasToBlob(canvas, format, quality);
 }

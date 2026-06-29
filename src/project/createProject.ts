@@ -1,21 +1,60 @@
 import { createId } from "../utils/id";
-import type { MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
-import { randomizeFull, randomizeWithinTemplate } from "../templates/randomize";
+import type { GridFrameConfig, MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
+import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeGlassFrame, normalizeGridFrame } from "../templates/randomize";
 import { getTemplateById } from "../templates/registry";
+import { normalizeTextFont } from "../templates/fonts";
 
 export function normalizeProject(project: Project): Project {
-  const refined = project.templateParams.refinedFrame as RefinedFrameConfig | undefined;
-  if (refined && (refined as RefinedFrameConfig & { canvasRatio?: unknown }).canvasRatio === undefined) {
-    return {
-      ...project,
-      templateParams: {
-        ...project.templateParams,
-        refinedFrame: { ...refined, canvasRatio: "auto" }
-      }
+  let templateParams = project.templateParams;
+
+  const normalizedFont = normalizeTextFont(templateParams.text.fontFamily);
+  if (normalizedFont !== templateParams.text.fontFamily) {
+    templateParams = {
+      ...templateParams,
+      text: { ...templateParams.text, fontFamily: normalizedFont }
     };
   }
 
-  return project;
+  const refined = templateParams.refinedFrame as RefinedFrameConfig | undefined;
+  if (refined && (refined as RefinedFrameConfig & { canvasRatio?: unknown }).canvasRatio === undefined) {
+    templateParams = {
+      ...templateParams,
+      refinedFrame: { ...refined, canvasRatio: "auto" }
+    };
+  }
+
+  const gridFrame = normalizeGridFrame(templateParams.gridFrame);
+  if (gridFrame) {
+    templateParams = {
+      ...templateParams,
+      gridFrame
+    };
+  }
+
+  const glassFrame = normalizeGlassFrame(templateParams.glassFrame);
+  if (glassFrame) {
+    templateParams = {
+      ...templateParams,
+      glassFrame
+    };
+  }
+
+  const bandFrame = normalizeBandFrame(templateParams.bandFrame);
+  if (bandFrame) {
+    templateParams = {
+      ...templateParams,
+      bandFrame
+    };
+  }
+
+  if (templateParams === project.templateParams) {
+    return project;
+  }
+
+  return {
+    ...project,
+    templateParams
+  };
 }
 
 export function createProjectFromMedia(
@@ -67,10 +106,29 @@ export function applyGalleryToProject(project: Project, entry: {
   };
 }
 
+export function replaceProjectMedia(project: Project, asset: MediaAsset): Project {
+  return {
+    ...project,
+    mediaAssetId: asset.id,
+    updatedAt: new Date().toISOString()
+  };
+}
+
 export function shuffleProjectParams(project: Project): Project {
   return {
     ...project,
     templateParams: randomizeWithinTemplate(project.templateId),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+export function switchProjectTemplate(project: Project, templateId: string): Project {
+  const template = getTemplateById(templateId);
+
+  return {
+    ...project,
+    templateId: template.id,
+    templateParams: structuredClone(template.baseParams),
     updatedAt: new Date().toISOString()
   };
 }

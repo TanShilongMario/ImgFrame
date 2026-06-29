@@ -1,6 +1,5 @@
 import type { TemplateParams } from "../types";
-import { templateRegistry } from "../templates/registry";
-import { randomizeTemplateParams } from "../templates/randomize";
+import { pickRandomTemplateSeeded, randomizeTemplateParams } from "../templates/randomize";
 import { heroImageUrls } from "../media/heroImages";
 
 export type GalleryEntry = {
@@ -61,12 +60,11 @@ export function buildGalleryBatch(seed = Date.now()): GalleryEntry[] {
     }
   }
 
-  const shuffledTemplates = shuffleSeeded(templateRegistry, rand);
   const entries: GalleryEntry[] = [];
 
   for (let index = 0; index < GALLERY_BATCH_SIZE; index += 1) {
     const mediaUrl = imageSlots[index];
-    const template = shuffledTemplates[index % shuffledTemplates.length];
+    const template = pickRandomTemplateSeeded(rand);
     const params = randomizeTemplateParams(template.baseParams);
     params.text = {
       ...params.text,

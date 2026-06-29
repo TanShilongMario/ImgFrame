@@ -8,8 +8,11 @@ import {
   createProjectFromGallery,
   createProjectFromMedia,
   normalizeProject,
-  shuffleProjectParams
+  replaceProjectMedia,
+  shuffleProjectParams,
+  switchProjectTemplate
 } from "../project/createProject";
+import { getTemplateById } from "../templates/registry";
 import { applyMagicModeParams } from "../project/magicMode";
 import { mediaRepository, projectRepository, settingsRepository } from "../storage/repositories";
 import type { MediaAsset, Project } from "../types";
@@ -34,8 +37,6 @@ export function App() {
   const [galleryBatchSeed, setGalleryBatchSeed] = useState(() => Date.now());
   const [templateListOpen, setTemplateListOpen] = useState(true);
   const [frameOpen, setFrameOpen] = useState(true);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-
   const galleryEntries = useMemo(() => buildGalleryBatch(galleryBatchSeed), [galleryBatchSeed]);
 
   useEffect(() => {
@@ -231,8 +232,16 @@ export function App() {
 
     try {
       const asset = await createMediaAsset(file);
-      const nextProject = createProjectFromMedia(asset);
       await mediaRepository.save(asset);
+
+      if (project) {
+        setProject(replaceProjectMedia(project, asset));
+        setMediaAsset(asset);
+        setStatus("已替换素材");
+        return;
+      }
+
+      const nextProject = createProjectFromMedia(asset);
       setProject(nextProject);
       setMediaAsset(asset);
       setStatus("已创建当前项目");
@@ -291,6 +300,17 @@ export function App() {
     setStatus("已在当前模板内随机参数");
   }
 
+  function handleSelectTemplate(templateId: string) {
+    if (!project || project.templateId === templateId) {
+      return;
+    }
+
+    const template = getTemplateById(templateId);
+    const nextProject = switchProjectTemplate(project, templateId);
+    updateProject(nextProject);
+    setStatus(`已切换至「${template.name}」`);
+  }
+
   async function handleDownloadResult() {
     if (!project) {
       return;
@@ -305,7 +325,7 @@ export function App() {
     setStatus("正在导出结果图...");
 
     try {
-      const blob = await exportProjectImage(project, mediaAsset, mediaUrl);
+      const blob = await exportProjectImage(project, mediaAsset, mediaUrl, { format: "png" });
       const filename = `${sanitizeFilename(project.name)}.png`;
       downloadBlob(blob, filename);
       setStatus("结果图已下载");
@@ -344,21 +364,20 @@ export function App() {
 
       <section className="scroll-section editor-section" data-section="editor">
         <EditorSection
-          archiveOpen={archiveOpen}
           frameOpen={frameOpen}
           isBusy={isBusy}
           editorRailsVisible={showEditorRails}
           mediaAsset={mediaAsset}
           mediaUrl={mediaUrl}
           project={project}
-          projectsCount={recentProjects.length}
           status={status}
           templateListOpen={templateListOpen}
           onNavigate={navigateTo}
           onDownloadResult={() => void handleDownloadResult()}
           onSaveToAlbum={() => void handleSaveToAlbum()}
           onShuffleParams={handleShuffleParams}
-          onToggleArchive={() => setArchiveOpen((value) => !value)}
+          onSelectTemplate={handleSelectTemplate}
+          onMagicFrame={(file, options) => void handleMagicFrame(file, options)}
           onToggleFrame={() => setFrameOpen((value) => !value)}
           onToggleTemplateList={() => setTemplateListOpen((value) => !value)}
           onUpdateTemplateParams={(params) => {

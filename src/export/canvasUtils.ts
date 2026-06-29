@@ -1,4 +1,7 @@
 import type { MediaAsset } from "../types";
+import { cssPx } from "../utils/cssPx";
+
+export { cssPx };
 
 export type LoadedMedia = {
   source: CanvasImageSource;
@@ -56,10 +59,6 @@ export async function loadMediaSource(asset: MediaAsset, objectUrl: string): Pro
     width: video.videoWidth,
     height: video.videoHeight
   };
-}
-
-export function cssPx(value: number, canvasWidth: number, referenceWidth = 720): number {
-  return value * (canvasWidth / referenceWidth);
 }
 
 export function drawCoverImage(

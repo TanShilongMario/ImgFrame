@@ -27,13 +27,14 @@ export const defaultTemplateParams: TemplateParams = {
     title: "高级展示卡片",
     subtitle: "上传素材后自动生成",
     credit: "Made by FrameForge",
-    titleColor: "#dd684f"
+    titleColor: "#dd684f",
+    fontFamily: "sans"
   }
 };
 
 export const starterTemplate = {
   id: "frameforge-signature",
-  name: "FrameForge Signature",
+  name: "雾纱",
   family: "refined-blur-frame"
 };
 

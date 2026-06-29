@@ -1,4 +1,6 @@
 import type { CanvasRatio, RefinedFrameConfig, TemplateParams } from "../types";
+import type { TextFontId } from "../templates/fonts";
+import { getFontStack } from "../templates/fonts";
 import { cssPx, createCanvas, drawCoverImage, type LoadedMedia } from "./canvasUtils";
 import { resolveExportDimensions } from "./sizing";
 
@@ -54,14 +56,15 @@ function drawRefinedCredit(
   credit: string,
   tone: RefinedFrameConfig["gradientTone"],
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
+  fontFamily: TextFontId
 ) {
   const fontSize = Math.min(cssPx(14, canvasWidth), Math.max(cssPx(9, canvasWidth), canvasWidth * 0.012));
   const bottomInset = Math.min(cssPx(28, canvasHeight, canvasHeight), Math.max(cssPx(14, canvasHeight, canvasHeight), frameHeight * 0.03));
   const maxTextWidth = Math.min(frameWidth * 0.72, cssPx(480, canvasWidth));
 
   context.save();
-  context.font = `800 ${fontSize}px "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif`;
+  context.font = `800 ${fontSize}px ${getFontStack(fontFamily)}`;
   context.fillStyle = tone === "white" ? "rgba(34, 34, 31, 0.62)" : "rgba(255, 255, 255, 0.78)";
   context.textAlign = "center";
   context.textBaseline = "bottom";
@@ -150,7 +153,8 @@ export function renderRefinedBlurFrame(
     params.text.credit,
     refinedFrame.gradientTone,
     width,
-    height
+    height,
+    params.text.fontFamily
   );
 
   return canvas;

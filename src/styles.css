@@ -200,7 +200,7 @@ button {
 .inspector .workspace-rail-panel {
   background: rgba(245, 245, 242, 0.22);
   backdrop-filter: blur(8px);
-  padding: 0 0 28px;
+  padding: 0;
   position: relative;
 }
 
@@ -210,6 +210,18 @@ button {
 
 .inspector .workspace-rail-panel {
   border-left: 1px solid rgba(48, 48, 45, 0.28);
+}
+
+.inspector-rail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.inspector .panel-content {
+  max-height: none;
+  overflow: visible;
 }
 
 .sidebar .workspace-rail-panel::before,
@@ -296,20 +308,39 @@ button {
   transform: rotate(45deg);
 }
 
+.workspace-rail-footer,
 .brand,
 .inspector-summary {
   align-items: flex-start;
+  border-top: 1px solid rgba(48, 48, 45, 0.16);
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: 0;
-  min-height: 86px;
-  padding: 18px 24px 0;
+  min-height: 72px;
+  padding: 14px 24px 20px;
 }
 
+.workspace-rail-footer h1,
+.workspace-rail-footer h2,
 .brand h1,
-.inspector-summary h2,
+.inspector-summary h2 {
+  color: rgba(44, 44, 41, 0.88);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 0;
+  text-shadow: none;
+}
+
+.workspace-rail-footer p,
 .brand p,
-.inspector-summary p,
+.inspector-summary p {
+  color: rgba(44, 44, 41, 0.54);
+  font-size: 11px;
+  margin: 0;
+}
+
 .panel h2,
 .empty-state p,
 .canvas-preview h2,
@@ -317,17 +348,6 @@ button {
   margin: 0;
 }
 
-.brand h1,
-.inspector-summary h2 {
-  color: rgba(44, 44, 41, 0.88);
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1.2;
-  text-shadow: none;
-}
-
-.brand p,
-.inspector-summary p,
 .muted,
 .empty-state span,
 .poster-subtitle,
@@ -411,7 +431,7 @@ button {
 }
 
 .template-list {
-  max-height: 132px;
+  max-height: 1200px;
 }
 
 .history-list {
@@ -549,9 +569,10 @@ button {
   display: flex;
   height: 100%;
   justify-content: center;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px 14px 24px;
+  padding: 10px 14px 16px;
   position: relative;
 }
 
@@ -559,20 +580,57 @@ button {
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 14px;
   height: 100%;
-  justify-content: center;
-  max-height: none;
+  justify-content: space-evenly;
+  max-height: 100%;
   max-width: 900px;
+  min-height: 0;
   position: relative;
   width: 100%;
   z-index: 1;
 }
 
+.stage-main {
+  align-items: center;
+  display: flex;
+  flex: 0 1 auto;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+}
+
+.stage-main > .card-preview,
+.stage-main > .stage-empty-upload {
+  flex: 0 1 auto;
+  max-height: min(640px, 52vh);
+  min-height: 0;
+}
+
+.stage-empty-upload {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.hero-upload-card-inline {
+  box-shadow:
+    0 24px 64px rgba(24, 24, 24, 0.14),
+    0 6px 20px rgba(24, 24, 24, 0.06);
+  height: min(560px, 52vh);
+  max-height: min(640px, 52vh);
+  width: min(360px, 72%);
+}
+
 .stage-actions {
   display: flex;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
+  padding: 0 8px;
+  width: 100%;
 }
 
 .stage-icon {
@@ -585,6 +643,7 @@ button {
   background: #2a2a28;
   border: 0;
   border-radius: 999px;
+  box-shadow: none;
   color: #f5f5f3;
   cursor: pointer;
   display: inline-flex;
@@ -594,10 +653,16 @@ button {
   height: 46px;
   justify-content: center;
   min-width: 104px;
+  overflow: visible;
   padding: 0 20px;
+  position: relative;
   transition:
     box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+label.stage-action {
+  border-radius: 999px;
 }
 
 .stage-action-input {
@@ -613,9 +678,9 @@ button {
   min-width: 126px;
 }
 
-.stage-action:hover:not(:disabled) {
-  box-shadow: 0 14px 32px rgba(24, 24, 24, 0.2);
-  transform: translateY(-2px);
+.stage-action:hover:not(:disabled):not(.is-disabled) {
+  box-shadow: 0 4px 12px rgba(24, 24, 24, 0.14);
+  transform: translateY(-1px);
 }
 
 .stage-action:disabled {
@@ -1018,7 +1083,11 @@ button {
 .hero-page {
   --hero-asset-ratio: 0.75;
   --hero-page-pad: clamp(32px, 5vw, 72px);
-  --hero-showcase-height: min(1128px, calc(var(--app-viewport-height) - var(--hero-page-pad) * 2));
+  --hero-scroll-reserve: 64px;
+  --hero-showcase-height: min(
+    1128px,
+    calc(var(--app-viewport-height) - var(--hero-page-pad) * 2 - var(--hero-scroll-reserve))
+  );
   --hero-template-frame-width: 67%;
 
   align-items: flex-end;
@@ -1030,7 +1099,7 @@ button {
   gap: clamp(48px, 9vw, 180px);
   height: 100%;
   min-height: 100%;
-  padding: var(--hero-page-pad);
+  padding: var(--hero-page-pad) var(--hero-page-pad) calc(var(--hero-page-pad) + var(--hero-scroll-reserve));
   position: relative;
 }
 
@@ -1086,6 +1155,24 @@ button {
   overflow: hidden;
   position: relative;
   width: auto;
+}
+
+.hero-template-card .card-preview-hero {
+  height: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.hero-template-card:has(.card-preview-glass) {
+  background: transparent;
+  overflow: hidden;
+}
+
+.hero-template-card .card-preview-refined,
+.hero-template-card .card-preview-grid,
+.hero-template-card .card-preview-glass {
+  height: 100%;
+  width: 100%;
 }
 
 .hero-template-bg {
@@ -1481,8 +1568,7 @@ button {
   width: 42px;
 }
 
-.scroll-hint-down,
-.scroll-hint-section {
+.scroll-hint-down {
   bottom: 28px;
   left: 50%;
   position: absolute;
@@ -1491,7 +1577,17 @@ button {
 }
 
 .scroll-hint-section {
-  bottom: 22px;
+  justify-self: center;
+  margin: 0 0 12px;
+  position: relative;
+  z-index: 5;
+}
+
+.scroll-hint-stage {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .scroll-hint-inline {
@@ -1799,12 +1895,25 @@ button {
   border-radius: 8px;
   flex: 0 1 auto;
   gap: 22px;
-  height: min(860px, calc(var(--app-viewport-height) - 112px));
-  max-height: none;
+  height: auto;
+  max-height: min(640px, 52vh);
   max-width: 100%;
   min-height: 0;
   padding: 44px 48px;
   width: auto;
+}
+
+.stage-main > .card-preview.card-preview-refined,
+.stage-main > .card-preview.card-preview-grid,
+.stage-main > .card-preview.card-preview-glass {
+  max-height: none;
+}
+
+.card-preview-stage.card-preview-refined,
+.card-preview-stage.card-preview-grid,
+.card-preview-stage.card-preview-glass {
+  max-height: none;
+  padding: 0;
 }
 
 .card-preview-stage .card-preview-title {
@@ -1935,6 +2044,340 @@ button {
   z-index: 4;
 }
 
+.card-preview-grid {
+  border-radius: 0;
+  gap: 0;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.grid-preview-media {
+  inset: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+.grid-preview-media img,
+.grid-preview-media video,
+.grid-preview-media .card-preview-demo {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  width: 100%;
+}
+
+.grid-preview-cell-effect {
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.grid-preview-cell-effect.is-darken {
+  mix-blend-mode: multiply;
+}
+
+.grid-preview-cell-effect.is-lighten {
+  mix-blend-mode: screen;
+}
+
+.grid-preview-lines {
+  height: 100%;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+  z-index: 2;
+}
+
+.grid-preview-title {
+  align-items: center;
+  display: flex;
+  font-size: clamp(14px, 4.5vw, 28px);
+  font-weight: 800;
+  justify-content: center;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  margin: 0;
+  overflow: hidden;
+  padding: 0 8%;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.card-preview-glass {
+  gap: 0;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  /* 圆角区域外不绘制底色，避免父容器露出方角灰边 */
+  background-clip: padding-box;
+}
+
+.glass-preview-plate {
+  border-radius: inherit;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: 0;
+}
+
+.glass-preview-plate-media {
+  inset: 0;
+  position: absolute;
+}
+
+.glass-preview-plate-media img,
+.glass-preview-plate-media video,
+.glass-preview-plate-media .card-preview-demo {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  width: 100%;
+}
+
+.glass-preview-plate-frost {
+  border-radius: inherit;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.glass-preview-window {
+  overflow: hidden;
+  position: absolute;
+  z-index: 2;
+}
+
+.glass-preview-window-media {
+  position: absolute;
+}
+
+.glass-preview-window-media img,
+.glass-preview-window-media video,
+.glass-preview-window-media .card-preview-demo {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  width: 100%;
+}
+
+.glass-preview-inset {
+  border-radius: inherit;
+  box-shadow:
+    inset 0 10px 28px rgba(0, 0, 0, 0.36),
+    inset 0 2px 8px rgba(0, 0, 0, 0.22),
+    inset 8px 0 18px rgba(0, 0, 0, 0.12);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.glass-preview-copy {
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+.glass-preview-copy h3,
+.glass-preview-copy p {
+  margin: 0;
+}
+
+.glass-preview-copy h3 {
+  font-size: clamp(16px, 4.2vw, 28px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+.glass-preview-copy p {
+  font-size: clamp(10px, 1.8vw, 14px);
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.35em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+}
+
+.glass-preview-outer-border {
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 1px 0 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+    inset -1px 0 0 rgba(255, 255, 255, 0.2);
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.card-preview-stage.card-preview-glass,
+.card-preview-gallery.card-preview-glass,
+.card-preview-thumb.card-preview-glass {
+  padding: 0;
+}
+
+.card-preview-band {
+  display: block;
+  gap: 0;
+  position: relative;
+}
+
+.stage-main > .card-preview.card-preview-band {
+  max-height: none;
+}
+
+.card-preview-stage.card-preview-band {
+  max-height: none;
+}
+
+.band-preview-card {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.band-preview-media {
+  inset: 0;
+  position: absolute;
+}
+
+.band-preview-media img,
+.band-preview-media video,
+.band-preview-media .card-preview-demo {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  width: 100%;
+}
+
+.band-preview-band {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.band-preview-copy {
+  align-items: flex-start;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+.band-preview-subtitle {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.band-preview-title {
+  font-weight: 800;
+  line-height: 1.12;
+  margin-top: 0.5em;
+}
+
+.band-color-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.band-color-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.band-color-swatch {
+  border: 1px solid rgba(44, 44, 41, 0.16);
+  border-radius: 9px;
+  cursor: pointer;
+  flex: 1 1 0;
+  height: 34px;
+  min-width: 0;
+  padding: 0;
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.band-color-swatch.is-active {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px rgba(44, 44, 41, 0.62);
+}
+
+.band-color-swatch:hover {
+  transform: translateY(-1px);
+}
+
+.band-color-system {
+  align-items: center;
+  background: rgba(48, 48, 45, 0.06);
+  border: 1px solid rgba(44, 44, 41, 0.16);
+  border-radius: 9px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  width: 100%;
+}
+
+.band-color-system:hover {
+  background: rgba(48, 48, 45, 0.1);
+}
+
+.band-color-system.is-active {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px rgba(44, 44, 41, 0.62);
+}
+
+.band-color-system-dot {
+  border: 1px solid rgba(44, 44, 41, 0.18);
+  border-radius: 6px;
+  flex: 0 0 auto;
+  height: 22px;
+  width: 22px;
+}
+
+.band-color-system-label {
+  color: rgba(44, 44, 41, 0.82);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.band-color-system-hint {
+  color: rgba(44, 44, 41, 0.46);
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
 .card-preview-placeholder {
   align-items: center;
   color: #8c867e;
@@ -1983,7 +2426,7 @@ button {
     align-items: stretch;
     flex-direction: column;
     gap: 40px;
-    padding: var(--hero-page-pad) var(--hero-page-pad) 88px;
+    padding: var(--hero-page-pad) var(--hero-page-pad) calc(var(--hero-page-pad) + var(--hero-scroll-reserve));
   }
 
   .hero-copy {

@@ -121,7 +121,7 @@ export const templateRegistry: TemplateDefinition[] = [
         title: "Title for a sentence",
         subtitle: "Subtitle",
         credit: "题序",
-        titleColor: "#2c2a27",
+        titleColor: "#3e3c40",
         fontFamily: "sans"
       },
       bandFrame: {

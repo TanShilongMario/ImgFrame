@@ -1,6 +1,8 @@
 :root {
   --site-header-height: 56px;
   --app-viewport-height: calc(100dvh - var(--site-header-height));
+  --preview-param-duration: 420ms;
+  --preview-param-ease: ease;
   color: #31312e;
   background: #e8e8e5;
   font-family: "Inter", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
@@ -1874,16 +1876,37 @@ label.stage-action {
   margin: 0;
 }
 
+/* 参数面板滑块驱动的预览层：新模板给可调 DOM 加 .preview-param-surface */
+.preview-param-surface {
+  transition:
+    background var(--preview-param-duration) var(--preview-param-ease),
+    background-color var(--preview-param-duration) var(--preview-param-ease),
+    color var(--preview-param-duration) var(--preview-param-ease),
+    padding var(--preview-param-duration) var(--preview-param-ease),
+    top var(--preview-param-duration) var(--preview-param-ease),
+    right var(--preview-param-duration) var(--preview-param-ease),
+    bottom var(--preview-param-duration) var(--preview-param-ease),
+    left var(--preview-param-duration) var(--preview-param-ease),
+    width var(--preview-param-duration) var(--preview-param-ease),
+    height var(--preview-param-duration) var(--preview-param-ease),
+    border-radius var(--preview-param-duration) var(--preview-param-ease),
+    border-width var(--preview-param-duration) var(--preview-param-ease),
+    border-color var(--preview-param-duration) var(--preview-param-ease),
+    box-shadow var(--preview-param-duration) var(--preview-param-ease),
+    filter var(--preview-param-duration) var(--preview-param-ease),
+    backdrop-filter var(--preview-param-duration) var(--preview-param-ease),
+    -webkit-backdrop-filter var(--preview-param-duration) var(--preview-param-ease),
+    font-size var(--preview-param-duration) var(--preview-param-ease),
+    transform var(--preview-param-duration) var(--preview-param-ease),
+    stroke var(--preview-param-duration) var(--preview-param-ease);
+}
+
 .card-preview {
   display: flex;
   flex-direction: column;
   gap: 18px;
   justify-content: center;
   position: relative;
-  transition:
-    background-color 420ms ease,
-    padding 420ms ease,
-    box-shadow 420ms ease;
 }
 
 .card-preview-hero {
@@ -1905,13 +1928,15 @@ label.stage-action {
 
 .stage-main > .card-preview.card-preview-refined,
 .stage-main > .card-preview.card-preview-grid,
-.stage-main > .card-preview.card-preview-glass {
+.stage-main > .card-preview.card-preview-glass,
+.stage-main > .card-preview.card-preview-band {
   max-height: none;
 }
 
 .card-preview-stage.card-preview-refined,
 .card-preview-stage.card-preview-grid,
-.card-preview-stage.card-preview-glass {
+.card-preview-stage.card-preview-glass,
+.card-preview-stage.card-preview-band {
   max-height: none;
   padding: 0;
 }
@@ -1952,10 +1977,6 @@ label.stage-action {
   background: rgba(255, 255, 255, 0.38);
   border-style: solid;
   overflow: hidden;
-  transition:
-    border-radius 420ms ease,
-    border-width 420ms ease,
-    box-shadow 420ms ease;
   width: 100%;
 }
 

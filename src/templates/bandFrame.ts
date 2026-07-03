@@ -15,11 +15,15 @@ export const BAND_FIXED_COLORS: { id: Exclude<BandColorChoice, "system">; label:
   { id: "cream", label: "米白", hex: "#f6f2ea" },
   { id: "sand", label: "浅褐", hex: "#d8c7b1" },
   { id: "mist", label: "雾灰", hex: "#e4e1db" },
-  { id: "ink", label: "墨黑", hex: "#23211f" },
+  { id: "lilac", label: "淡紫", hex: "#d1cbd4" },
   { id: "sage", label: "黛绿", hex: "#cbd4cc" }
 ];
 
 const FIXED_COLOR_MAP = new Map(BAND_FIXED_COLORS.map((item) => [item.id, item.hex]));
+
+function migrateBandColorChoice(choice: BandColorChoice | "ink"): BandColorChoice {
+  return choice === "ink" ? "lilac" : choice;
+}
 
 export function clampBandFrame(frame: BandFrameConfig): BandFrameConfig {
   const clampValue = (value: number, range: { min: number; max: number }) =>
@@ -27,6 +31,8 @@ export function clampBandFrame(frame: BandFrameConfig): BandFrameConfig {
 
   return {
     ...frame,
+    bandColor: migrateBandColorChoice(frame.bandColor as BandColorChoice | "ink"),
+    backingColor: migrateBandColorChoice(frame.backingColor as BandColorChoice | "ink"),
     outerMargin: clampValue(frame.outerMargin, BAND_FRAME_LIMITS.outerMargin),
     bandHeight: clampValue(frame.bandHeight, BAND_FRAME_LIMITS.bandHeight),
     subtitleSize: clampValue(frame.subtitleSize, BAND_FRAME_LIMITS.subtitleSize),
@@ -138,7 +144,7 @@ export function getBandTextColors(bandHex: string): { title: string; subtitle: s
   if (isDark) {
     return { title: "rgba(255, 255, 255, 0.94)", subtitle: "rgba(255, 255, 255, 0.7)" };
   }
-  return { title: "#2c2a27", subtitle: "rgba(44, 42, 39, 0.62)" };
+  return { title: "#3e3c40", subtitle: "rgba(62, 60, 64, 0.62)" };
 }
 
 export function hexToRgb(hex: string): Rgb | null {

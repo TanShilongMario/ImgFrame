@@ -65,7 +65,7 @@ export type RefinedFrameConfig = {
 
 export type GlassTextTone = "white" | "black" | "gray";
 
-export type BandColorChoice = "cream" | "sand" | "mist" | "ink" | "sage" | "system";
+export type BandColorChoice = "cream" | "sand" | "mist" | "lilac" | "sage" | "system";
 
 export type BandFrameConfig = {
   canvasRatio: RefinedCanvasRatio;

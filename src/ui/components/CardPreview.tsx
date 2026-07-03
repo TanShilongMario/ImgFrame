@@ -24,6 +24,7 @@ import { getFontStack } from "../../templates/fonts";
 import { useElementWidth } from "../../hooks/useElementWidth";
 import { useImageAspectRatio } from "../../hooks/useImageAspectRatio";
 import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
+import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
 import { useRef, type ReactNode } from "react";
 
@@ -112,14 +113,14 @@ function GlassCardPreview({
   return (
     <div
       ref={rootRef}
-      className={`card-preview card-preview-${variant} card-preview-glass`}
+      className={surface(`card-preview card-preview-${variant} card-preview-glass`)}
       style={stageStyle}
     >
       <div className="glass-preview-plate">
         <div className="glass-preview-plate-media">{renderMedia(mediaName)}</div>
         <div
           aria-hidden="true"
-          className="glass-preview-plate-frost"
+          className={surface("glass-preview-plate-frost")}
           style={{
             backdropFilter: `blur(${blurPx}px) saturate(1.04)`,
             WebkitBackdropFilter: `blur(${blurPx}px) saturate(1.04)`,
@@ -129,7 +130,7 @@ function GlassCardPreview({
         <div aria-hidden="true" className="glass-preview-outer-border" />
       </div>
       <div
-        className="glass-preview-window"
+        className={surface("glass-preview-window")}
         style={{
           borderRadius: `${innerRadiusPx}px`,
           bottom: `${insets.bottom}%`,
@@ -138,7 +139,7 @@ function GlassCardPreview({
           top: `${insets.top}%`
         }}
       >
-        <div className="glass-preview-window-media" style={windowMediaStyle}>
+        <div className={surface("glass-preview-window-media")} style={windowMediaStyle}>
           {renderMedia(mediaName)}
         </div>
         <div aria-hidden="true" className="glass-preview-inset" />
@@ -150,8 +151,12 @@ function GlassCardPreview({
             top: `${textInsetY}px`
           }}
         >
-          <h3 style={{ color: textColors.title }}>{params.text.title.slice(0, 24)}</h3>
-          <p style={{ color: textColors.subtitle }}>{params.text.subtitle.slice(0, 48)}</p>
+          <h3 className={surface()} style={{ color: textColors.title }}>
+            {params.text.title.slice(0, 24)}
+          </h3>
+          <p className={surface()} style={{ color: textColors.subtitle }}>
+            {params.text.subtitle.slice(0, 48)}
+          </p>
         </div>
       </div>
     </div>
@@ -197,14 +202,18 @@ function RefinedCardPreview({
   return (
     <div
       ref={rootRef}
-      className={`card-preview card-preview-${variant} card-preview-refined`}
+      className={surface(`card-preview card-preview-${variant} card-preview-refined`)}
       style={stageStyle}
     >
-      <div className="refined-preview-bg" style={{ filter: `blur(${blurPx}px)` }} aria-hidden="true">
+      <div
+        className={surface("refined-preview-bg")}
+        style={{ filter: `blur(${blurPx}px)` }}
+        aria-hidden="true"
+      >
         {renderMedia("")}
       </div>
       <div
-        className="refined-preview-frame"
+        className={surface("refined-preview-frame")}
         style={{
           bottom: `${verticalInset}%`,
           top: `${verticalInset}%`,
@@ -212,9 +221,13 @@ function RefinedCardPreview({
         }}
       >
         {renderMedia(mediaName)}
-        <div className="refined-preview-gradient" style={{ background: gradientBackground }} aria-hidden="true" />
+        <div
+          className={surface("refined-preview-gradient")}
+          style={{ background: gradientBackground }}
+          aria-hidden="true"
+        />
         <p
-          className="refined-preview-credit"
+          className={surface("refined-preview-credit")}
           style={{ color: creditColor, fontFamily: getFontStack(params.text.fontFamily) }}
         >
           {params.text.credit}
@@ -265,13 +278,13 @@ function BandCardPreview({
   return (
     <div
       ref={rootRef}
-      className={`card-preview card-preview-${variant} card-preview-band`}
+      className={surface(`card-preview card-preview-${variant} card-preview-band`)}
       style={rootStyle}
     >
-      <div className="band-preview-card" style={{ borderRadius: `${radiusPx}px` }}>
+      <div className={surface("band-preview-card")} style={{ borderRadius: `${radiusPx}px` }}>
         <div className="band-preview-media">{renderMedia(mediaName)}</div>
         <div
-          className="band-preview-band"
+          className={surface("band-preview-band")}
           style={{ background: bandHex, height: `${bandFrame.bandHeight}%` }}
         >
           <div
@@ -279,13 +292,13 @@ function BandCardPreview({
             style={{ fontFamily: fontStack, paddingLeft: `${padX}px`, paddingRight: `${padX}px` }}
           >
             <span
-              className="band-preview-subtitle"
+              className={surface("band-preview-subtitle")}
               style={{ color: textColors.subtitle, fontSize: `${subtitlePx}px` }}
             >
               {params.text.subtitle.slice(0, 24)}
             </span>
             <span
-              className="band-preview-title"
+              className={surface("band-preview-title")}
               style={{ color: textColors.title, fontSize: `${titlePx}px` }}
             >
               {params.text.title.slice(0, 40)}
@@ -397,7 +410,7 @@ export function CardPreview({
 
     return (
       <div
-        className={`card-preview card-preview-${variant} card-preview-grid`}
+        className={surface(`card-preview card-preview-${variant} card-preview-grid`)}
         style={stageStyle}
       >
         <div className="grid-preview-media">{renderMedia(mediaName)}</div>
@@ -411,7 +424,7 @@ export function CardPreview({
           return (
             <div
               key={cell.index}
-              className={`grid-preview-cell-effect is-${entry.effect}`}
+              className={surface(`grid-preview-cell-effect is-${entry.effect}`)}
               style={{
                 background: overlay,
                 height: `${cell.height}%`,
@@ -439,13 +452,53 @@ export function CardPreview({
             x="0"
             y="0"
           />
-          <line stroke={lineColor} strokeWidth={GRID_LINE_WIDTH_PX} vectorEffect="non-scaling-stroke" x1={gridFrame.lineX1} x2={gridFrame.lineX1} y1="0" y2="100" />
-          <line stroke={lineColor} strokeWidth={GRID_LINE_WIDTH_PX} vectorEffect="non-scaling-stroke" x1={gridFrame.lineX2} x2={gridFrame.lineX2} y1="0" y2="100" />
-          <line stroke={lineColor} strokeWidth={GRID_LINE_WIDTH_PX} vectorEffect="non-scaling-stroke" x1="0" x2="100" y1={gridFrame.lineY1} y2={gridFrame.lineY1} />
-          <line stroke={lineColor} strokeWidth={GRID_LINE_WIDTH_PX} vectorEffect="non-scaling-stroke" x1="0" x2="100" y1={gridFrame.lineY2} y2={gridFrame.lineY2} />
+          <line
+            className={surface()}
+            stroke={lineColor}
+            strokeWidth={GRID_LINE_WIDTH_PX}
+            transform={`translate(${gridFrame.lineX1}, 0)`}
+            vectorEffect="non-scaling-stroke"
+            x1="0"
+            x2="0"
+            y1="0"
+            y2="100"
+          />
+          <line
+            className={surface()}
+            stroke={lineColor}
+            strokeWidth={GRID_LINE_WIDTH_PX}
+            transform={`translate(${gridFrame.lineX2}, 0)`}
+            vectorEffect="non-scaling-stroke"
+            x1="0"
+            x2="0"
+            y1="0"
+            y2="100"
+          />
+          <line
+            className={surface()}
+            stroke={lineColor}
+            strokeWidth={GRID_LINE_WIDTH_PX}
+            transform={`translate(0, ${gridFrame.lineY1})`}
+            vectorEffect="non-scaling-stroke"
+            x1="0"
+            x2="100"
+            y1="0"
+            y2="0"
+          />
+          <line
+            className={surface()}
+            stroke={lineColor}
+            strokeWidth={GRID_LINE_WIDTH_PX}
+            transform={`translate(0, ${gridFrame.lineY2})`}
+            vectorEffect="non-scaling-stroke"
+            x1="0"
+            x2="100"
+            y1="0"
+            y2="0"
+          />
         </svg>
         <p
-          className="grid-preview-title"
+          className={surface("grid-preview-title")}
           style={{
             color: titleColor,
             fontFamily: getFontStack(params.text.fontFamily),
@@ -491,12 +544,12 @@ export function CardPreview({
 
   return (
     <div
-      className={`card-preview card-preview-${variant}${framed ? " is-framed" : " is-raw"}`}
+      className={surface(`card-preview card-preview-${variant}${framed ? " is-framed" : " is-raw"}`)}
       style={{ background: framed ? params.canvas.background : "transparent" }}
     >
       {framed ? <p className="card-preview-subtitle">{params.text.subtitle}</p> : null}
       <div
-        className="card-preview-media"
+        className={surface("card-preview-media")}
         style={{
           aspectRatio: ratio,
           borderColor: framed ? params.media.borderColor : "transparent",
@@ -511,7 +564,7 @@ export function CardPreview({
       </div>
       {framed ? (
         <>
-          <h3 className="card-preview-title" style={{ color: params.text.titleColor }}>
+          <h3 className={surface("card-preview-title")} style={{ color: params.text.titleColor }}>
             {params.text.title}
           </h3>
           <p className="card-preview-credit">{params.text.credit}</p>

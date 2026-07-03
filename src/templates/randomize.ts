@@ -66,8 +66,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
   }
 
   if (base.bandFrame) {
-    const fixedColors: BandColorChoice[] = ["cream", "sand", "mist", "ink", "sage"];
-    const bandColor = pick(fixedColors.filter((c) => c !== "ink")); // 腰封偏浅
+    const fixedColors: BandColorChoice[] = ["cream", "sand", "mist", "lilac", "sage"];
+    const bandColor = pick(fixedColors); // 腰封偏浅，均为柔和浅色系
     const backingColor = pick(fixedColors.filter((c) => c !== bandColor));
     return {
       ...cloneParams(base),

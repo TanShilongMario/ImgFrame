@@ -26,7 +26,7 @@ export const defaultTemplateParams: TemplateParams = {
   text: {
     title: "高级展示卡片",
     subtitle: "上传素材后自动生成",
-    credit: "Made by FrameForge",
+    credit: "光影札记",
     titleColor: "#dd684f",
     fontFamily: "sans"
   }

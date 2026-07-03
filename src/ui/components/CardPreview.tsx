@@ -1,4 +1,11 @@
-import type { BandFrameConfig, CanvasRatio, GlassFrameConfig, TemplateParams } from "../../types";
+import type {
+  BandFrameConfig,
+  CanvasRatio,
+  GlassFrameConfig,
+  GridFrameConfig,
+  RefinedCanvasRatio,
+  TemplateParams
+} from "../../types";
 import { getTemplateById } from "../../templates/registry";
 import {
   getGridCellRects,
@@ -58,6 +65,23 @@ const ratioNumberMap: Record<CanvasRatio, number> = {
 };
 
 const GLASS_RADIUS_REF_WIDTH = 720;
+
+/** 各模板共用的画布比例解析：auto 时跟随原图，否则查表。 */
+function resolveCanvasRatio(
+  canvasRatio: RefinedCanvasRatio | undefined,
+  imageRatio: number | undefined,
+  fallback: CanvasRatio
+): { ratio: string; ratioNumber: number } {
+  if (canvasRatio && canvasRatio !== "auto") {
+    return { ratio: ratioMap[canvasRatio], ratioNumber: ratioNumberMap[canvasRatio] };
+  }
+
+  if (canvasRatio === "auto" && imageRatio) {
+    return { ratio: String(imageRatio), ratioNumber: imageRatio };
+  }
+
+  return { ratio: ratioMap[fallback], ratioNumber: ratioNumberMap[fallback] };
+}
 
 type GlassCardPreviewProps = {
   glassFrame: GlassFrameConfig;
@@ -310,6 +334,141 @@ function BandCardPreview({
   );
 }
 
+function GridCardPreview({
+  gridFrame,
+  params,
+  ratio,
+  ratioNumber,
+  variant,
+  renderMedia,
+  mediaName
+}: {
+  gridFrame: GridFrameConfig;
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+  renderMedia: (alt: string) => ReactNode;
+  mediaName: string;
+}) {
+  const cells = getGridCellRects(gridFrame);
+  const titleCell = cells[8];
+  const lineColor = getGridLineColor(gridFrame.lineTone);
+  const titleColor = getGridTitleColor(gridFrame.lineTone);
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(ratio, ratioNumber),
+          background: params.canvas.background
+        }
+      : { aspectRatio: ratio, background: params.canvas.background };
+
+  return (
+    <div
+      className={surface(`card-preview card-preview-${variant} card-preview-grid`)}
+      style={stageStyle}
+    >
+      <div className="grid-preview-media">{renderMedia(mediaName)}</div>
+      {cells.map((cell) => {
+        const entry = gridFrame.cellEffects[cell.index];
+        const overlay = getCellOverlayRgba(entry);
+        if (!overlay) {
+          return null;
+        }
+
+        return (
+          <div
+            key={cell.index}
+            className={surface(`grid-preview-cell-effect is-${entry.effect}`)}
+            style={{
+              background: overlay,
+              height: `${cell.height}%`,
+              left: `${cell.left}%`,
+              top: `${cell.top}%`,
+              width: `${cell.width}%`
+            }}
+            aria-hidden="true"
+          />
+        );
+      })}
+      <svg
+        aria-hidden="true"
+        className="grid-preview-lines"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+      >
+        <rect
+          fill="none"
+          height="100"
+          stroke={lineColor}
+          strokeWidth={GRID_LINE_WIDTH_PX}
+          vectorEffect="non-scaling-stroke"
+          width="100"
+          x="0"
+          y="0"
+        />
+        <line
+          className={surface()}
+          stroke={lineColor}
+          strokeWidth={GRID_LINE_WIDTH_PX}
+          transform={`translate(${gridFrame.lineX1}, 0)`}
+          vectorEffect="non-scaling-stroke"
+          x1="0"
+          x2="0"
+          y1="0"
+          y2="100"
+        />
+        <line
+          className={surface()}
+          stroke={lineColor}
+          strokeWidth={GRID_LINE_WIDTH_PX}
+          transform={`translate(${gridFrame.lineX2}, 0)`}
+          vectorEffect="non-scaling-stroke"
+          x1="0"
+          x2="0"
+          y1="0"
+          y2="100"
+        />
+        <line
+          className={surface()}
+          stroke={lineColor}
+          strokeWidth={GRID_LINE_WIDTH_PX}
+          transform={`translate(0, ${gridFrame.lineY1})`}
+          vectorEffect="non-scaling-stroke"
+          x1="0"
+          x2="100"
+          y1="0"
+          y2="0"
+        />
+        <line
+          className={surface()}
+          stroke={lineColor}
+          strokeWidth={GRID_LINE_WIDTH_PX}
+          transform={`translate(0, ${gridFrame.lineY2})`}
+          vectorEffect="non-scaling-stroke"
+          x1="0"
+          x2="100"
+          y1="0"
+          y2="0"
+        />
+      </svg>
+      <p
+        className={surface("grid-preview-title")}
+        style={{
+          color: titleColor,
+          fontFamily: getFontStack(params.text.fontFamily),
+          height: `${titleCell.height}%`,
+          left: `${titleCell.left}%`,
+          top: `${titleCell.top}%`,
+          width: `${titleCell.width}%`
+        }}
+      >
+        {params.text.title.slice(0, 10)}
+      </p>
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -326,44 +485,9 @@ export function CardPreview({
   const glassFrame = template?.family === "glass-frame" ? params.glassFrame : undefined;
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl);
-  let ratio: string;
-  let ratioNumber = ratioNumberMap[params.canvas.ratio];
-  if (refinedFrame) {
-    if (refinedFrame.canvasRatio === "auto") {
-      ratio = imageRatio ? String(imageRatio) : ratioMap[params.canvas.ratio];
-      ratioNumber = imageRatio ?? ratioNumberMap[params.canvas.ratio];
-    } else {
-      ratio = ratioMap[refinedFrame.canvasRatio];
-      ratioNumber = ratioNumberMap[refinedFrame.canvasRatio];
-    }
-  } else if (gridFrame) {
-    if (gridFrame.canvasRatio === "auto") {
-      ratio = imageRatio ? String(imageRatio) : ratioMap[params.canvas.ratio];
-      ratioNumber = imageRatio ?? ratioNumberMap[params.canvas.ratio];
-    } else {
-      ratio = ratioMap[gridFrame.canvasRatio];
-      ratioNumber = ratioNumberMap[gridFrame.canvasRatio];
-    }
-  } else if (glassFrame) {
-    if (glassFrame.canvasRatio === "auto") {
-      ratio = imageRatio ? String(imageRatio) : ratioMap[params.canvas.ratio];
-      ratioNumber = imageRatio ?? ratioNumberMap[params.canvas.ratio];
-    } else {
-      ratio = ratioMap[glassFrame.canvasRatio];
-      ratioNumber = ratioNumberMap[glassFrame.canvasRatio];
-    }
-  } else if (bandFrame) {
-    if (bandFrame.canvasRatio === "auto") {
-      ratio = imageRatio ? String(imageRatio) : ratioMap[params.canvas.ratio];
-      ratioNumber = imageRatio ?? ratioNumberMap[params.canvas.ratio];
-    } else {
-      ratio = ratioMap[bandFrame.canvasRatio];
-      ratioNumber = ratioNumberMap[bandFrame.canvasRatio];
-    }
-  } else {
-    ratio = ratioMap[params.canvas.ratio];
-    ratioNumber = ratioNumberMap[params.canvas.ratio];
-  }
+  const frameCanvasRatio =
+    refinedFrame?.canvasRatio ?? gridFrame?.canvasRatio ?? glassFrame?.canvasRatio ?? bandFrame?.canvasRatio;
+  const { ratio, ratioNumber } = resolveCanvasRatio(frameCanvasRatio, imageRatio ?? undefined, params.canvas.ratio);
 
   function renderMedia(alt: string) {
     if (mediaUrl && mediaType === "image") {
@@ -371,7 +495,7 @@ export function CardPreview({
     }
 
     if (mediaUrl) {
-      return <video muted playsInline src={mediaUrl} />;
+      return <video autoPlay loop muted playsInline src={mediaUrl} />;
     }
 
     if (demoFill) {
@@ -396,121 +520,16 @@ export function CardPreview({
   }
 
   if (framed && gridFrame) {
-    const cells = getGridCellRects(gridFrame);
-    const titleCell = cells[8];
-    const lineColor = getGridLineColor(gridFrame.lineTone);
-    const titleColor = getGridTitleColor(gridFrame.lineTone);
-    const stageStyle =
-      variant === "stage"
-        ? {
-            ...getStagePreviewStyle(ratio, ratioNumber),
-            background: params.canvas.background
-          }
-        : { aspectRatio: ratio, background: params.canvas.background };
-
     return (
-      <div
-        className={surface(`card-preview card-preview-${variant} card-preview-grid`)}
-        style={stageStyle}
-      >
-        <div className="grid-preview-media">{renderMedia(mediaName)}</div>
-        {cells.map((cell) => {
-          const entry = gridFrame.cellEffects[cell.index];
-          const overlay = getCellOverlayRgba(entry);
-          if (!overlay) {
-            return null;
-          }
-
-          return (
-            <div
-              key={cell.index}
-              className={surface(`grid-preview-cell-effect is-${entry.effect}`)}
-              style={{
-                background: overlay,
-                height: `${cell.height}%`,
-                left: `${cell.left}%`,
-                top: `${cell.top}%`,
-                width: `${cell.width}%`
-              }}
-              aria-hidden="true"
-            />
-          );
-        })}
-        <svg
-          aria-hidden="true"
-          className="grid-preview-lines"
-          preserveAspectRatio="none"
-          viewBox="0 0 100 100"
-        >
-          <rect
-            fill="none"
-            height="100"
-            stroke={lineColor}
-            strokeWidth={GRID_LINE_WIDTH_PX}
-            vectorEffect="non-scaling-stroke"
-            width="100"
-            x="0"
-            y="0"
-          />
-          <line
-            className={surface()}
-            stroke={lineColor}
-            strokeWidth={GRID_LINE_WIDTH_PX}
-            transform={`translate(${gridFrame.lineX1}, 0)`}
-            vectorEffect="non-scaling-stroke"
-            x1="0"
-            x2="0"
-            y1="0"
-            y2="100"
-          />
-          <line
-            className={surface()}
-            stroke={lineColor}
-            strokeWidth={GRID_LINE_WIDTH_PX}
-            transform={`translate(${gridFrame.lineX2}, 0)`}
-            vectorEffect="non-scaling-stroke"
-            x1="0"
-            x2="0"
-            y1="0"
-            y2="100"
-          />
-          <line
-            className={surface()}
-            stroke={lineColor}
-            strokeWidth={GRID_LINE_WIDTH_PX}
-            transform={`translate(0, ${gridFrame.lineY1})`}
-            vectorEffect="non-scaling-stroke"
-            x1="0"
-            x2="100"
-            y1="0"
-            y2="0"
-          />
-          <line
-            className={surface()}
-            stroke={lineColor}
-            strokeWidth={GRID_LINE_WIDTH_PX}
-            transform={`translate(0, ${gridFrame.lineY2})`}
-            vectorEffect="non-scaling-stroke"
-            x1="0"
-            x2="100"
-            y1="0"
-            y2="0"
-          />
-        </svg>
-        <p
-          className={surface("grid-preview-title")}
-          style={{
-            color: titleColor,
-            fontFamily: getFontStack(params.text.fontFamily),
-            height: `${titleCell.height}%`,
-            left: `${titleCell.left}%`,
-            top: `${titleCell.top}%`,
-            width: `${titleCell.width}%`
-          }}
-        >
-          {params.text.title.slice(0, 10)}
-        </p>
-      </div>
+      <GridCardPreview
+        gridFrame={gridFrame}
+        mediaName={mediaName}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        renderMedia={renderMedia}
+        variant={variant}
+      />
     );
   }
 

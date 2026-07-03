@@ -3,11 +3,12 @@ import { randomizeTemplatePick } from "../templates/randomize";
 import type { HeroCeremonyPhase } from "../ui/components/HeroUploadPanel";
 import type { HeroUploadOptions } from "../ui/HeroPage";
 
+// 每幕之间刻意留出静止的一拍，营造"起 — 顿 — 起"的仪式节奏
 const CEREMONY_STEPS: Array<{ phase: HeroCeremonyPhase; label: string; delay: number }> = [
   { phase: "dots", label: "素材进入画布", delay: 0 },
-  { phase: "reading", label: "正在采样色彩", delay: 900 },
-  { phase: "transforming", label: "正在生成展示卡片", delay: 1900 },
-  { phase: "done", label: "即将进入编辑器", delay: 2800 }
+  { phase: "reading", label: "正在采样色彩", delay: 1650 },
+  { phase: "transforming", label: "正在生成展示卡片", delay: 3250 },
+  { phase: "done", label: "定格完成 · 即将进入编辑器", delay: 4600 }
 ];
 
 function isImageFile(file: File): boolean {
@@ -110,7 +111,8 @@ export function useUploadCardFlow({
         previousDelay = step.delay;
       }
 
-      await wait(500);
+      // 白光定格后多停留一拍，让"惊喜"落地再进入编辑器
+      await wait(1050);
       const magicOptions = getMagicOptions?.() ?? {
         previewParams: fallbackPreview.params,
         templateId: fallbackPreview.templateId

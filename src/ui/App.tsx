@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildGalleryBatch, type GalleryEntry } from "../gallery/catalog";
+// import { useAppTheme } from "../hooks/useAppTheme";
 import { useOrchestratedNavigation } from "../hooks/useOrchestratedNavigation";
 import { analyzeImageFile } from "../media/analyzeImage";
 import { createMediaAsset } from "../media/metadata";
@@ -25,14 +26,31 @@ import { GallerySection } from "./GallerySection";
 import { HeroPage, type HeroUploadOptions } from "./HeroPage";
 import { SiteHeader } from "./components/SiteHeader";
 
+/** 高频/初始状态不弹 toast，避免拖动滑杆时提示不断闪现 */
+const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存"]);
+
 export function App() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { activeSection, editorRailsVisible, navigateTo } = useOrchestratedNavigation(scrollRef);
+  // const { theme, toggleTheme } = useAppTheme();
   const showEditorRails = editorRailsVisible && activeSection === "editor";
   const [project, setProject] = useState<Project | null>(null);
   const [mediaAsset, setMediaAsset] = useState<MediaAsset | null>(null);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [status, setStatus] = useState("等待上传素材");
+  const [toastVisible, setToastVisible] = useState(false);
+
+  useEffect(() => {
+    if (QUIET_STATUSES.has(status)) {
+      setToastVisible(false);
+      return;
+    }
+
+    setToastVisible(true);
+    const timer = window.setTimeout(() => setToastVisible(false), 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [status]);
   const [isBusy, setIsBusy] = useState(false);
   const [galleryBatchSeed, setGalleryBatchSeed] = useState(() => Date.now());
   const [templateListOpen, setTemplateListOpen] = useState(true);
@@ -65,21 +83,19 @@ export function App() {
     return () => window.clearTimeout(autosaveTimerRef.current);
   }, [project]);
 
-  const mediaUrl = useMemo(() => {
-    if (!mediaAsset) {
-      return undefined;
-    }
-
-    return URL.createObjectURL(mediaAsset.blob);
-  }, [mediaAsset]);
+  const [mediaUrl, setMediaUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    return () => {
-      if (mediaUrl) {
-        URL.revokeObjectURL(mediaUrl);
-      }
-    };
-  }, [mediaUrl]);
+    if (!mediaAsset) {
+      setMediaUrl(undefined);
+      return;
+    }
+
+    const url = URL.createObjectURL(mediaAsset.blob);
+    setMediaUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [mediaAsset]);
 
   async function restoreLastSession() {
     const [settings, projects] = await Promise.all([
@@ -414,6 +430,10 @@ export function App() {
           onRenameProject={(projectId, name) => void handleRenameProject(projectId, name)}
         />
       </section>
+      </div>
+
+      <div aria-live="polite" className={`app-toast${toastVisible ? " is-visible" : ""}`} role="status">
+        {status}
       </div>
     </>
   );

@@ -10,7 +10,7 @@ const borderColors = ["#ffffff", "#f5f2ec", "rgba(255,255,255,0.72)", "#3a3a36",
 const titleColors = ["#dd684f", "#3d5c48", "#8c6b4f", "#ffffff", "#2b2b28", "#b85c42", "#e8e4dc"];
 const titles = ["高级展示", "视觉容器", "Quiet Frame", "Poster Study", "Material Card", "Cover Draft"];
 const subtitles = ["上传即生成", "Curated layout", "Frame your work", "Presentation ready", "Made to share"];
-const refinedCredits = ["雾纱", "FrameForge", "Made by FrameForge"];
+const refinedCredits = ["雾里看花", "薄雾时分", "晨光未醒", "Into the Mist", "Soft Morning", "光影札记"];
 const gridTitles = ["Title", "Moment", "Still", "Frame", "Light", "View", "Post", "Note", "City"];
 const glassTitles = ["Kyoto", "Tokyo", "Paris", "Shanghai", "Osaka", "London", "Seoul", "Hangzhou"];
 const bandTitles = [
@@ -149,7 +149,7 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
     text: {
       title: pick(titles),
       subtitle: pick(subtitles),
-      credit: "Made by FrameForge",
+      credit: pick(refinedCredits),
       titleColor: pick(titleColors),
       fontFamily: base.text.fontFamily
     }

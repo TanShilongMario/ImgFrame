@@ -27,7 +27,7 @@ export const templateRegistry: TemplateDefinition[] = [
       text: {
         title: "雾纱",
         subtitle: "Soft blur frame",
-        credit: "雾纱",
+        credit: "薄雾时分",
         titleColor: "#2a2a28",
         fontFamily: "sans"
       },

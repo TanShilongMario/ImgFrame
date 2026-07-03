@@ -81,21 +81,27 @@ export function HeroUploadCard({
 
   return (
     <div
-      className={`hero-upload-card${variant === "inline" ? " hero-upload-card-inline" : ""}${isDragOver ? " is-drag-over" : ""}${isCeremony ? " is-ceremony" : ""}`}
+      className={`hero-upload-card${variant === "inline" ? " hero-upload-card-inline" : ""}${isDragOver ? " is-drag-over" : ""}${isCeremony ? " is-ceremony" : ""} is-phase-${ceremonyPhase}`}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDropInternal}
     >
       <div className="hero-upload-frame">
-        {hasPreview && ceremonyPhase === "idle" ? (
-          <img alt="已选图片预览" className="hero-upload-preview" src={previewUrl ?? undefined} />
+        {hasPreview && (ceremonyPhase === "idle" || ceremonyPhase === "done") ? (
+          <img
+            alt="已选图片预览"
+            className={`hero-upload-preview${ceremonyPhase === "done" ? " is-reveal" : ""}`}
+            src={previewUrl ?? undefined}
+          />
         ) : null}
 
-        {hasPreview && isCeremony ? <HeroDotField active imageUrl={previewUrl ?? ""} /> : null}
+        {hasPreview && isCeremony ? <HeroDotField imageUrl={previewUrl ?? ""} phase={ceremonyPhase} /> : null}
 
         {isCeremony ? (
           <div className="hero-upload-ceremony-copy">
-            <p className="hero-upload-ceremony-label">{ceremonyLabel}</p>
+            <p key={ceremonyLabel} className="hero-upload-ceremony-label">
+              {ceremonyLabel}
+            </p>
             <div className="hero-upload-ceremony-bar">
               <span className={`hero-upload-ceremony-progress is-${ceremonyPhase}`} aria-hidden="true" />
             </div>

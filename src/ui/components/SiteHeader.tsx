@@ -1,8 +1,12 @@
+// import { Moon, Sun } from "lucide-react";
 import type { AppSection } from "../../hooks/useOrchestratedNavigation";
+// import type { AppTheme } from "../../hooks/useAppTheme";
 
 type SiteHeaderProps = {
   activeSection: AppSection;
+  // theme: AppTheme;
   onNavigate: (section: AppSection) => void;
+  // onToggleTheme: () => void;
 };
 
 const navItems: { id: AppSection; label: string }[] = [
@@ -27,6 +31,21 @@ export function SiteHeader({ activeSection, onNavigate }: SiteHeaderProps) {
             {item.label}
           </button>
         ))}
+        {/* 暗色模式入口暂时下线，样式待优化后再启用
+        <button
+          aria-label={theme === "dark" ? "切换到亮色模式" : "切换到暗色模式"}
+          className="site-header-theme-toggle"
+          title={theme === "dark" ? "切换到亮色模式" : "切换到暗色模式"}
+          type="button"
+          onClick={onToggleTheme}
+        >
+          {theme === "dark" ? (
+            <Sun aria-hidden="true" size={15} strokeWidth={2.2} />
+          ) : (
+            <Moon aria-hidden="true" size={15} strokeWidth={2.2} />
+          )}
+        </button>
+        */}
       </nav>
     </header>
   );

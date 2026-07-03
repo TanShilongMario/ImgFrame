@@ -5,6 +5,8 @@ export type ImageDot = {
   radius: number;
 };
 
+export const DOT_GRID = { columns: 28, rows: 36 };
+
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -16,8 +18,8 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 
 export async function sampleImageDots(
   url: string,
-  columns = 28,
-  rows = 36
+  columns = DOT_GRID.columns,
+  rows = DOT_GRID.rows
 ): Promise<ImageDot[]> {
   const image = await loadImage(url);
   const canvas = document.createElement("canvas");

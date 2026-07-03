@@ -37,12 +37,15 @@ export function GallerySection({ entries, onApplyEntry, onRefreshBatch, onNaviga
         <div className="gallery-grid">
           {entries.map((entry) => (
             <button className="gallery-card" key={entry.id} type="button" onClick={() => onApplyEntry(entry)}>
-              <CardPreview
-                mediaUrl={entry.mediaUrl}
-                params={entry.params}
-                templateId={entry.templateId}
-                variant="gallery"
-              />
+              <img alt="" aria-hidden="true" className="gallery-card-raw" loading="lazy" src={entry.mediaUrl} />
+              <div className="gallery-card-framed">
+                <CardPreview
+                  mediaUrl={entry.mediaUrl}
+                  params={entry.params}
+                  templateId={entry.templateId}
+                  variant="gallery"
+                />
+              </div>
             </button>
           ))}
         </div>

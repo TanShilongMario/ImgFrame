@@ -98,6 +98,27 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
     }
   }, [scrollToSectionRaw]);
 
+  const stepSection = useCallback((direction: 1 | -1) => {
+    const current = activeSectionRef.current;
+
+    // Gallery 与 Album 之间不允许通过滚动/翻页互达，只能走导航按钮
+    if (current === "gallery" && direction > 0) {
+      return;
+    }
+    if (current === "album" && direction < 0) {
+      return;
+    }
+
+    const currentIndex = sections.indexOf(current);
+    const nextIndex = Math.min(sections.length - 1, Math.max(0, currentIndex + direction));
+
+    if (nextIndex === currentIndex) {
+      return;
+    }
+
+    void navigateTo(sections[nextIndex]);
+  }, [navigateTo]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -140,30 +161,45 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
       }
 
       event.preventDefault();
-
-      const currentIndex = sections.indexOf(activeSectionRef.current);
-      
-      // Prevent scrolling down from gallery to album, and scrolling up from album to gallery
-      if (activeSectionRef.current === "gallery" && direction > 0) {
-        return;
-      }
-      if (activeSectionRef.current === "album" && direction < 0) {
-        return;
-      }
-
-      const nextIndex = Math.min(sections.length - 1, Math.max(0, currentIndex + direction));
-
-      if (nextIndex === currentIndex) {
-        return;
-      }
-
-      void navigateTo(sections[nextIndex]);
+      stepSection(direction);
     };
 
     container.addEventListener("wheel", onWheel, { passive: false });
 
     return () => container.removeEventListener("wheel", onWheel);
-  }, [containerRef, navigateTo]);
+  }, [containerRef, navigateTo, stepSection]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isAnimatingRef.current) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable ||
+          target.closest(innerScrollSelectors.join(",")))
+      ) {
+        return;
+      }
+
+      if (event.key === "PageDown" || event.key === "ArrowDown") {
+        event.preventDefault();
+        stepSection(1);
+      } else if (event.key === "PageUp" || event.key === "ArrowUp") {
+        event.preventDefault();
+        stepSection(-1);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [stepSection]);
 
   return { activeSection, editorRailsVisible, navigateTo };
 }

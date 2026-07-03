@@ -950,6 +950,7 @@ label.stage-action {
   align-items: stretch;
   display: grid;
   gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
   min-height: auto;
   padding: 14px 24px;
 }
@@ -974,7 +975,7 @@ label.stage-action {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
-  width: 239px;
+  width: 100%;
 }
 
 .segmented-control-wrap {
@@ -1008,6 +1009,7 @@ label.stage-action {
   align-items: stretch;
   display: grid;
   gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
   min-height: auto;
   padding: 14px 24px;
 }
@@ -1037,11 +1039,74 @@ label.stage-action {
   outline: 0;
   padding: 12px;
   resize: vertical;
-  width: 239px;
+  width: 100%;
 }
 
 .text-control input:focus {
   border-color: rgba(48, 48, 45, 0.46);
+}
+
+.seed-control {
+  grid-template-columns: 1fr auto;
+}
+
+.seed-value-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-self: end;
+}
+
+.seed-dice {
+  align-items: center;
+  background: rgba(44, 44, 41, 0.08);
+  border: 1px solid rgba(48, 48, 45, 0.18);
+  border-radius: 9px;
+  color: rgba(44, 44, 41, 0.72);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  width: 34px;
+}
+
+.seed-dice:hover {
+  background: rgba(44, 44, 41, 0.84);
+  color: #f5f5f3;
+  transform: translateY(-1px);
+}
+
+.app-toast {
+  background: rgba(36, 36, 34, 0.92);
+  border-radius: 999px;
+  bottom: 26px;
+  box-shadow: 0 12px 32px rgba(24, 24, 24, 0.24);
+  color: #f5f5f3;
+  font-size: 13px;
+  font-weight: 700;
+  left: 50%;
+  max-width: min(80vw, 420px);
+  opacity: 0;
+  overflow: hidden;
+  padding: 10px 20px;
+  pointer-events: none;
+  position: fixed;
+  text-overflow: ellipsis;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+  white-space: nowrap;
+  z-index: 200;
+}
+
+.app-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 @media (max-width: 980px) {
@@ -1406,6 +1471,44 @@ label.stage-action {
   width: 100%;
 }
 
+/* 定格揭幕：实图从马赛克底下缓缓浮现，与柔光同步收尾 */
+.hero-upload-preview.is-reveal {
+  animation: heroRevealImage 1050ms cubic-bezier(0.25, 0.8, 0.3, 1) both;
+}
+
+@keyframes heroRevealImage {
+  from {
+    filter: saturate(0.78) brightness(1.06);
+    opacity: 0;
+    transform: scale(1.03);
+  }
+
+  to {
+    filter: saturate(1) brightness(1);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 定格瞬间卡片极轻微地沉一下，几乎不可察觉 */
+.hero-upload-card.is-phase-done {
+  animation: heroCardSnap 780ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+}
+
+@keyframes heroCardSnap {
+  0% {
+    transform: scale(1);
+  }
+
+  36% {
+    transform: scale(0.994);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 .hero-upload-ceremony-copy {
   align-items: center;
   backdrop-filter: blur(4px);
@@ -1421,11 +1524,26 @@ label.stage-action {
 }
 
 .hero-upload-ceremony-label {
+  animation: heroCeremonyLabelIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
   color: rgba(42, 42, 40, 0.82);
   font-size: 13px;
   font-weight: 800;
   margin: 0;
   text-align: center;
+}
+
+@keyframes heroCeremonyLabelIn {
+  from {
+    filter: blur(3px);
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-upload-ceremony-bar {
@@ -1445,16 +1563,17 @@ label.stage-action {
   width: 100%;
 }
 
+/* 进度条不匀速：先冲一段，中途放缓停顿，结尾再加速补完，呼应画面的顿挫节奏 */
 .hero-upload-ceremony-progress.is-dots {
-  animation: heroCeremonyProgress 1.1s ease forwards;
+  animation: heroCeremonyProgress 1.55s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
 }
 
 .hero-upload-ceremony-progress.is-reading {
-  animation: heroCeremonyProgress 1.2s ease forwards;
+  animation: heroCeremonyProgress 1.5s cubic-bezier(0.6, 0.04, 0.32, 1) forwards;
 }
 
 .hero-upload-ceremony-progress.is-transforming {
-  animation: heroCeremonyProgress 1.3s ease forwards;
+  animation: heroCeremonyProgress 1.25s cubic-bezier(0.5, 0, 0.18, 1.04) forwards;
 }
 
 .hero-upload-ceremony-progress.is-done {
@@ -1462,11 +1581,19 @@ label.stage-action {
 }
 
 @keyframes heroCeremonyProgress {
-  from {
-    transform: scaleX(0.08);
+  0% {
+    transform: scaleX(0.06);
   }
 
-  to {
+  38% {
+    transform: scaleX(0.58);
+  }
+
+  62% {
+    transform: scaleX(0.66);
+  }
+
+  100% {
     transform: scaleX(1);
   }
 }
@@ -1737,6 +1864,9 @@ label.stage-action {
   background: transparent;
   border: 0;
   break-inside: avoid;
+  /* 屏外卡片跳过渲染，降低大量 backdrop-filter 卡片的滚动开销 */
+  contain-intrinsic-size: 320px 400px;
+  content-visibility: auto;
   cursor: pointer;
   display: block;
   margin: 0 0 24px;
@@ -1752,6 +1882,50 @@ label.stage-action {
 .gallery-card:hover {
   box-shadow: 0 18px 42px rgba(44, 44, 41, 0.12);
   transform: translateY(-3px);
+}
+
+/* Hover 揭幕：原图垫底，模板层像一张卡片被轻轻掀走 */
+.gallery-card-raw {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  position: absolute;
+  transform: scale(1.05);
+  transition:
+    opacity 340ms ease 60ms,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1) 60ms;
+  width: 100%;
+}
+
+.gallery-card-framed {
+  position: relative;
+  transform-origin: 50% 100%;
+  transition:
+    opacity 300ms ease 40ms,
+    transform 460ms cubic-bezier(0.32, 0, 0.24, 1);
+  z-index: 1;
+}
+
+.gallery-card:hover .gallery-card-raw,
+.gallery-card:focus-visible .gallery-card-raw {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.gallery-card:hover .gallery-card-framed,
+.gallery-card:focus-visible .gallery-card-framed {
+  opacity: 0;
+  transform: translateY(-18px) rotate(-1.2deg) scale(1.015);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-card-raw,
+  .gallery-card-framed {
+    transition-duration: 1ms;
+  }
 }
 
 .album-card {
@@ -2500,4 +2674,357 @@ label.stage-action {
   .album-grid {
     column-count: 2;
   }
+}
+
+/* ============================================================
+   主题开关（Header）
+   ============================================================ */
+
+.site-header-theme-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(42, 42, 40, 0.18);
+  border-radius: 999px;
+  color: rgba(42, 42, 40, 0.62);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+  width: 34px;
+}
+
+.site-header-theme-toggle:hover {
+  background: rgba(42, 42, 40, 0.08);
+  color: #2a2a28;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   暗色模式 —— 与浅色同一套暖灰语言，只翻转明度
+   ============================================================ */
+
+:root[data-theme="dark"] {
+  background: #1b1b19;
+  color: #e6e4df;
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body::before {
+  background: #1b1b19;
+}
+
+/* —— Header —— */
+
+[data-theme="dark"] .site-header {
+  background: rgba(27, 27, 25, 0.82);
+}
+
+[data-theme="dark"] .site-header-brand {
+  color: #ecebe6;
+}
+
+[data-theme="dark"] .site-header-nav-item {
+  color: rgba(236, 235, 230, 0.38);
+}
+
+[data-theme="dark"] .site-header-nav-item:hover {
+  color: rgba(236, 235, 230, 0.75);
+}
+
+[data-theme="dark"] .site-header-nav-item.is-active {
+  color: #ecebe6;
+}
+
+[data-theme="dark"] .site-header-theme-toggle {
+  border-color: rgba(236, 235, 230, 0.22);
+  color: rgba(236, 235, 230, 0.62);
+}
+
+[data-theme="dark"] .site-header-theme-toggle:hover {
+  background: rgba(236, 235, 230, 0.1);
+  color: #ecebe6;
+}
+
+/* —— 首页 —— */
+
+[data-theme="dark"] .hero-title {
+  color: #ecebe6;
+}
+
+[data-theme="dark"] .hero-lead {
+  color: rgba(230, 228, 223, 0.62);
+}
+
+[data-theme="dark"] .hero-upload-hint {
+  color: rgba(230, 228, 223, 0.42);
+}
+
+[data-theme="dark"] .hero-upload {
+  background: #ecebe6;
+  color: #22221f;
+}
+
+[data-theme="dark"] .hero-upload:hover:not(:disabled) {
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="dark"] .hero-page.is-drag-over:not(.is-upload-open) {
+  outline-color: rgba(236, 235, 230, 0.26);
+}
+
+[data-theme="dark"] .hero-template-card {
+  background: #262624;
+}
+
+[data-theme="dark"] .hero-template-gradient {
+  background: linear-gradient(0deg, #1b1b19 0%, #1b1b19fd 3%, rgba(27, 27, 25, 0) 41%);
+}
+
+[data-theme="dark"] .hero-template-credit {
+  color: rgba(236, 235, 230, 0.56);
+}
+
+[data-theme="dark"] .scroll-hint {
+  border-color: rgba(236, 235, 230, 0.22);
+  color: rgba(236, 235, 230, 0.58);
+}
+
+/* —— 上传卡片 —— */
+
+[data-theme="dark"] .hero-upload-panel-backdrop {
+  background: rgba(20, 20, 18, 0.62);
+}
+
+[data-theme="dark"] .hero-upload-card {
+  background: #232321;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .hero-upload-card.is-drag-over {
+  outline-color: rgba(236, 235, 230, 0.32);
+}
+
+[data-theme="dark"] .hero-upload-frame {
+  background: #3a3a36;
+  box-shadow:
+    inset 0 10px 28px rgba(0, 0, 0, 0.34),
+    inset 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .hero-upload-actions {
+  background: #232321;
+}
+
+[data-theme="dark"] .hero-upload-action-primary,
+[data-theme="dark"] .hero-upload-action-secondary {
+  background: #3d3d39;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .hero-upload-ceremony-copy {
+  background: linear-gradient(180deg, rgba(30, 30, 28, 0) 0%, rgba(30, 30, 28, 0.76) 100%);
+}
+
+[data-theme="dark"] .hero-upload-ceremony-label {
+  color: rgba(236, 235, 230, 0.85);
+}
+
+[data-theme="dark"] .hero-upload-ceremony-bar {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .hero-upload-ceremony-progress {
+  background: linear-gradient(90deg, #ecebe6 0%, #b7a696 100%);
+}
+
+/* —— 编辑器：侧栏与检查器 —— */
+
+[data-theme="dark"] .sidebar .workspace-rail-panel,
+[data-theme="dark"] .inspector .workspace-rail-panel {
+  background: rgba(30, 30, 28, 0.55);
+}
+
+[data-theme="dark"] .sidebar .workspace-rail-panel {
+  border-right-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .inspector .workspace-rail-panel {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .panel h2,
+[data-theme="dark"] .panel-heading {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  color: rgba(236, 235, 230, 0.85);
+}
+
+[data-theme="dark"] .control-panel.is-expanded .panel-heading {
+  border-bottom-color: transparent;
+}
+
+[data-theme="dark"] .template-item,
+[data-theme="dark"] .history-item {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: rgba(236, 235, 230, 0.6);
+}
+
+[data-theme="dark"] .template-item:hover,
+[data-theme="dark"] .history-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0efe9;
+}
+
+[data-theme="dark"] .template-item.is-active,
+[data-theme="dark"] .history-item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .brand h1,
+[data-theme="dark"] .inspector-summary h2 {
+  color: rgba(236, 235, 230, 0.88);
+}
+
+[data-theme="dark"] .brand p,
+[data-theme="dark"] .inspector-summary p,
+[data-theme="dark"] .muted,
+[data-theme="dark"] .empty-state span,
+[data-theme="dark"] .credit {
+  color: rgba(236, 235, 230, 0.5);
+}
+
+[data-theme="dark"] .workspace-rail-footer,
+[data-theme="dark"] .brand,
+[data-theme="dark"] .inspector-summary {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* —— 检查器控件 —— */
+
+[data-theme="dark"] .field {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .field span {
+  color: rgba(236, 235, 230, 0.55);
+}
+
+[data-theme="dark"] .field strong {
+  color: rgba(236, 235, 230, 0.8);
+}
+
+[data-theme="dark"] .range-control input {
+  accent-color: rgba(236, 235, 230, 0.85);
+}
+
+[data-theme="dark"] .segmented-control {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .segmented-control button {
+  color: rgba(236, 235, 230, 0.6);
+}
+
+[data-theme="dark"] .segmented-control button.is-active {
+  background: #e8e6e1;
+  color: #22221f;
+}
+
+[data-theme="dark"] .text-control input,
+[data-theme="dark"] .text-control textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(236, 235, 230, 0.85);
+}
+
+[data-theme="dark"] .text-control input:focus,
+[data-theme="dark"] .text-control textarea:focus {
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+[data-theme="dark"] .seed-dice {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(236, 235, 230, 0.7);
+}
+
+[data-theme="dark"] .seed-dice:hover {
+  background: #e8e6e1;
+  color: #22221f;
+}
+
+[data-theme="dark"] .band-color-swatch {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .band-color-swatch.is-active,
+[data-theme="dark"] .band-color-system.is-active {
+  box-shadow:
+    0 0 0 2px #232321,
+    0 0 0 4px rgba(236, 235, 230, 0.66);
+}
+
+[data-theme="dark"] .band-color-system {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .band-color-system:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .band-color-system-dot {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .band-color-system-label {
+  color: rgba(236, 235, 230, 0.82);
+}
+
+[data-theme="dark"] .band-color-system-hint {
+  color: rgba(236, 235, 230, 0.45);
+}
+
+/* —— 操作按钮 —— */
+
+[data-theme="dark"] .stage-action {
+  background: #ecebe6;
+  color: #22221f;
+}
+
+[data-theme="dark"] .stage-action:hover:not(:disabled):not(.is-disabled) {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* —— 画廊与画册 —— */
+
+[data-theme="dark"] .gallery-eyebrow {
+  color: rgba(236, 235, 230, 0.88);
+}
+
+[data-theme="dark"] .gallery-lead {
+  color: rgba(236, 235, 230, 0.55);
+}
+
+[data-theme="dark"] .gallery-card:hover {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46);
+}
+
+[data-theme="dark"] .empty-state {
+  border-color: rgba(236, 235, 230, 0.22);
+}
+
+/* —— Toast —— */
+
+[data-theme="dark"] .app-toast {
+  background: rgba(240, 239, 235, 0.94);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  color: #26261f;
 }

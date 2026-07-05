@@ -1,8 +1,8 @@
-import type { GlassFrameConfig, GlassTextTone } from "../types";
-import { fallbackSystemColor, sampleAverageColorFromSource, type Rgb } from "./bandFrame";
+import type { BandColorChoice, GlassFrameConfig, GlassTextTone } from "../types";
+import { fallbackSystemColor, resolveBandColor, sampleAverageColorFromSource, type Rgb } from "./bandFrame";
 
 export const GLASS_FRAME_LIMITS = {
-  edgeWidth: { min: 1.5, max: 8 },
+  edgeWidth: { min: 0, max: 8 },
   bottomExtra: { min: 0, max: 20 },
   blur: { min: 4, max: 48 },
   outerRadius: { min: 28, max: 96 }
@@ -65,13 +65,31 @@ export function clampGlassFrame(frame: GlassFrameConfig): GlassFrameConfig {
     edgeWidth,
     bottomExtra,
     blur,
-    outerRadius
+    outerRadius,
+    backingColor: frame.backingColor ?? (frame.backingHex ? "system" : "system"),
+    systemBackingHex: frame.systemBackingHex ?? frame.backingHex
   };
 }
 
-export function resolveGlassBackingColor(backingHex?: string, average?: Rgb | null): string {
-  if (backingHex) {
-    return backingHex;
+export type GlassBackingColorSource = {
+  backingColor?: BandColorChoice;
+  systemBackingHex?: string;
+  backingHex?: string;
+};
+
+export function resolveGlassBackingColor(source: GlassBackingColorSource, average?: Rgb | null): string {
+  const choice = source.backingColor ?? "system";
+
+  if (choice !== "system") {
+    return resolveBandColor(choice);
+  }
+
+  if (source.systemBackingHex) {
+    return source.systemBackingHex;
+  }
+
+  if (source.backingHex) {
+    return source.backingHex;
   }
 
   if (average) {
@@ -85,14 +103,15 @@ export function deriveGlassBackingFromSource(source: CanvasImageSource): string 
   return fallbackSystemColor(sampleAverageColorFromSource(source), "backing");
 }
 
-export function getGlassInsets(frame: GlassFrameConfig) {
+export function getGlassInsets(frame: GlassFrameConfig, referenceWidth = 720) {
   const normalized = clampGlassFrame(frame);
+  const plateInsetPercent = (getGlassPlateInsetPx(referenceWidth) / referenceWidth) * 100;
 
   return {
-    top: normalized.edgeWidth,
-    right: normalized.edgeWidth,
-    bottom: normalized.edgeWidth + normalized.bottomExtra,
-    left: normalized.edgeWidth
+    top: plateInsetPercent + normalized.edgeWidth,
+    right: plateInsetPercent + normalized.edgeWidth,
+    bottom: plateInsetPercent + normalized.edgeWidth + normalized.bottomExtra,
+    left: plateInsetPercent + normalized.edgeWidth
   };
 }
 
@@ -103,17 +122,18 @@ export type GlassInsetsPx = {
   left: number;
 };
 
-/** 边缘统一按画布宽度换算，保证左右与上下的物理边距一致 */
+/** 边缘统一按画布宽度换算；0 时贴齐玻璃内缘（含 plate 退边距） */
 export function getGlassInsetsPx(frame: GlassFrameConfig, referenceWidth: number): GlassInsetsPx {
   const normalized = clampGlassFrame(frame);
+  const plateInsetPx = getGlassPlateInsetPx(referenceWidth);
   const edgePx = (normalized.edgeWidth / 100) * referenceWidth;
   const bottomExtraPx = (normalized.bottomExtra / 100) * referenceWidth;
 
   return {
-    top: edgePx,
-    right: edgePx,
-    bottom: edgePx + bottomExtraPx,
-    left: edgePx
+    top: plateInsetPx + edgePx,
+    right: plateInsetPx + edgePx,
+    bottom: plateInsetPx + edgePx + bottomExtraPx,
+    left: plateInsetPx + edgePx
   };
 }
 
@@ -146,14 +166,25 @@ export function getGlassWindowMediaStylePx(
   };
 }
 
-export function getGlassEdgeNormalized(edgeWidth: number): number {
-  const { min, max } = GLASS_FRAME_LIMITS.edgeWidth;
-  return (edgeWidth - min) / (max - min);
+export function getGlassEdgeNormalized(
+  edgeWidth: number,
+  limits: { min: number; max: number } = GLASS_FRAME_LIMITS.edgeWidth
+): number {
+  const span = limits.max - limits.min;
+  if (span <= 0) {
+    return 0;
+  }
+
+  return (edgeWidth - limits.min) / span;
 }
 
 /** 内圆角随边缘厚度线性变小（相对外圆角的比例 @720） */
-export function getGlassInnerRadiusRatio(edgeWidth: number, outerRadiusRef = GLASS_OUTER_RADIUS_PX): number {
-  const t = getGlassEdgeNormalized(edgeWidth);
+export function getGlassInnerRadiusRatio(
+  edgeWidth: number,
+  outerRadiusRef = GLASS_OUTER_RADIUS_PX,
+  edgeLimits: { min: number; max: number } = GLASS_FRAME_LIMITS.edgeWidth
+): number {
+  const t = getGlassEdgeNormalized(edgeWidth, edgeLimits);
   const innerAtRef =
     GLASS_INNER_RADIUS_AT_REF.thin -
     t * (GLASS_INNER_RADIUS_AT_REF.thin - GLASS_INNER_RADIUS_AT_REF.thick);
@@ -164,10 +195,11 @@ export function getGlassInnerRadiusRatio(edgeWidth: number, outerRadiusRef = GLA
 export function getGlassInnerRadiusPx(
   edgeWidth: number,
   referenceWidth = 720,
-  outerRadiusRef = GLASS_OUTER_RADIUS_PX
+  outerRadiusRef = GLASS_OUTER_RADIUS_PX,
+  edgeLimits: { min: number; max: number } = GLASS_FRAME_LIMITS.edgeWidth
 ): number {
   const scale = referenceWidth / 720;
-  const inner = getGlassInnerRadiusRatio(edgeWidth, outerRadiusRef) * outerRadiusRef * scale;
+  const inner = getGlassInnerRadiusRatio(edgeWidth, outerRadiusRef, edgeLimits) * outerRadiusRef * scale;
   const outer = outerRadiusRef * scale;
   const minInner = 6 * scale;
 

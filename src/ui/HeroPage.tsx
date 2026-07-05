@@ -38,9 +38,9 @@ export function HeroPage({ isBusy, onMagicFrame, onScrollDown }: HeroPageProps) 
             onClick={flow.openUploadPanel}
           >
             <Upload aria-hidden="true" className="hero-upload-icon" size={16} strokeWidth={2.4} />
-            <span>Try from a Photo</span>
+            <span>Try from a Photo or Video</span>
           </button>
-          <p className="hero-upload-hint">JPG · PNG — drag anywhere to upload</p>
+          <p className="hero-upload-hint">JPG · PNG · MP4 · MOV — drag anywhere to upload</p>
         </div>
       </div>
 
@@ -60,6 +60,7 @@ export function HeroPage({ isBusy, onMagicFrame, onScrollDown }: HeroPageProps) 
         ceremonyPhase={flow.ceremonyPhase}
         isBusy={isBusy}
         isDragOver={flow.isDragOver}
+        isPreviewLoading={flow.isPreviewLoading}
         open={flow.uploadPanelOpen}
         previewUrl={flow.previewUrl}
         onClose={flow.closeUploadPanel}

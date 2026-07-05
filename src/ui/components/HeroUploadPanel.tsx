@@ -5,6 +5,7 @@ export type { HeroCeremonyPhase } from "./HeroUploadCard";
 type HeroUploadPanelProps = {
   open: boolean;
   previewUrl: string | null;
+  isPreviewLoading?: boolean;
   ceremonyPhase: HeroCeremonyPhase;
   ceremonyLabel: string;
   isDragOver: boolean;
@@ -20,6 +21,7 @@ type HeroUploadPanelProps = {
 export function HeroUploadPanel({
   open,
   previewUrl,
+  isPreviewLoading = false,
   ceremonyPhase,
   ceremonyLabel,
   isDragOver,
@@ -38,7 +40,7 @@ export function HeroUploadPanel({
   }
 
   return (
-    <div className="hero-upload-panel" role="dialog" aria-modal="true" aria-label="上传图片">
+    <div className="hero-upload-panel" role="dialog" aria-modal="true" aria-label="上传素材">
       <button
         aria-label="关闭上传面板"
         className="hero-upload-panel-backdrop"
@@ -52,6 +54,7 @@ export function HeroUploadPanel({
         ceremonyPhase={ceremonyPhase}
         isBusy={isBusy}
         isDragOver={isDragOver}
+        isPreviewLoading={isPreviewLoading}
         previewUrl={previewUrl}
         variant="modal"
         onDragEnter={onDragEnter}

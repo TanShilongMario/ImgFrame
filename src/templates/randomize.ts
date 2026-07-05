@@ -1,6 +1,7 @@
-import type { BandColorChoice, BandFrameConfig, CanvasRatio, GlassFrameConfig, GridFrameConfig, TemplateParams } from "../types";
+import type { BandColorChoice, BandFrameConfig, CanvasRatio, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, TemplateParams } from "../types";
 import { getTemplateById, templateRegistry, type TemplateDefinition } from "./registry";
 import { clampGlassFrame } from "./glassFrame";
+import { clampGlassSillFrame } from "./glassSillFrame";
 import { clampBandFrame } from "./bandFrame";
 import { deriveCellEffectsFromSeed, normalizeCellEffects, withDerivedGridEffects } from "./gridFrame";
 
@@ -34,6 +35,15 @@ const glassSubtitles = [
   "West Lake · China"
 ];
 
+const glassSillCaptions = [
+  "Arashiyama · Kyoto",
+  "Shibuya Crossing",
+  "Le Marais · Paris",
+  "The Bund · Shanghai",
+  "West Lake · Hangzhou",
+  "Han River · Seoul"
+];
+
 function pick<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -47,6 +57,28 @@ function cloneParams(params: TemplateParams): TemplateParams {
 }
 
 export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
+  if (base.glassSillFrame) {
+    return {
+      ...cloneParams(base),
+      text: {
+        ...base.text,
+        title: pick(glassSillCaptions).slice(0, 40),
+        subtitle: ""
+      },
+      glassSillFrame: clampGlassSillFrame({
+        ...base.glassSillFrame,
+        edgeWidth: Number((2.5 + Math.random() * 3).toFixed(1)),
+        bottomBand: Number((10 + Math.random() * 6).toFixed(1)),
+        blur: range(24, 40),
+        outerRadius: range(44, 72),
+        textTone: pick(["white", "black", "gray"] as const),
+        backingColor: pick(["cream", "sand", "mist", "lilac", "sage", "system"] as const),
+        systemBackingHex: undefined,
+        causticHex: undefined
+      })
+    };
+  }
+
   if (base.glassFrame) {
     return {
       ...cloneParams(base),
@@ -62,7 +94,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         blur: range(20, 40),
         outerRadius: range(48, 80),
         textTone: pick(["white", "black", "gray"] as const),
-        backingHex: undefined
+        backingColor: pick(["cream", "sand", "mist", "lilac", "sage", "system"] as const),
+        systemBackingHex: undefined
       })
     };
   }
@@ -204,6 +237,14 @@ export function normalizeGlassFrame(frame?: GlassFrameConfig): GlassFrameConfig 
   }
 
   return clampGlassFrame(frame);
+}
+
+export function normalizeGlassSillFrame(frame?: GlassSillFrameConfig): GlassSillFrameConfig | undefined {
+  if (!frame) {
+    return undefined;
+  }
+
+  return clampGlassSillFrame(frame);
 }
 
 export function normalizeBandFrame(frame?: BandFrameConfig): BandFrameConfig | undefined {

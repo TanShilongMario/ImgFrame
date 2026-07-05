@@ -1,10 +1,12 @@
 import { useRef, type DragEvent, type ChangeEvent } from "react";
+import { isUploadableMediaFile } from "../../media/videoPoster";
 import { HeroDotField } from "./HeroDotField";
 
 export type HeroCeremonyPhase = "idle" | "dots" | "reading" | "transforming" | "done";
 
 type HeroUploadCardProps = {
   previewUrl: string | null;
+  isPreviewLoading?: boolean;
   ceremonyPhase: HeroCeremonyPhase;
   ceremonyLabel: string;
   isDragOver: boolean;
@@ -17,12 +19,13 @@ type HeroUploadCardProps = {
   onMagicFrame: () => void;
 };
 
-function isImageFile(file: File): boolean {
-  return file.type.startsWith("image/");
+function isMediaFile(file: File): boolean {
+  return isUploadableMediaFile(file);
 }
 
 export function HeroUploadCard({
   previewUrl,
+  isPreviewLoading = false,
   ceremonyPhase,
   ceremonyLabel,
   isDragOver,
@@ -38,6 +41,8 @@ export function HeroUploadCard({
   const changeInputRef = useRef<HTMLInputElement>(null);
   const isCeremony = ceremonyPhase !== "idle";
   const hasPreview = Boolean(previewUrl);
+  const hasSelectedMedia = hasPreview || isPreviewLoading;
+  const showPreviewImage = hasPreview && (ceremonyPhase === "idle" || ceremonyPhase === "done");
 
   function openFilePicker(target: "upload" | "change") {
     if (isBusy || isCeremony) {
@@ -71,7 +76,7 @@ export function HeroUploadCard({
   function handleDropInternal(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
-    if (file && isImageFile(file)) {
+    if (file && isMediaFile(file)) {
       onFileSelect(file);
       return;
     }
@@ -87,9 +92,13 @@ export function HeroUploadCard({
       onDrop={handleDropInternal}
     >
       <div className="hero-upload-frame">
-        {hasPreview && (ceremonyPhase === "idle" || ceremonyPhase === "done") ? (
+        {isPreviewLoading ? (
+          <p className="hero-upload-preview-loading">正在读取视频首帧…</p>
+        ) : null}
+
+        {showPreviewImage ? (
           <img
-            alt="已选图片预览"
+            alt="已选素材预览"
             className={`hero-upload-preview${ceremonyPhase === "done" ? " is-reveal" : ""}`}
             src={previewUrl ?? undefined}
           />
@@ -110,32 +119,32 @@ export function HeroUploadCard({
       </div>
 
       <div className="hero-upload-actions">
-        {!hasPreview ? (
+        {!hasSelectedMedia ? (
           <>
-            <input ref={fileInputRef} accept="image/*" hidden type="file" onChange={handleInputChange} />
+            <input ref={fileInputRef} accept="image/*,video/*" hidden type="file" onChange={handleInputChange} />
             <button
               className="hero-upload-action hero-upload-action-primary"
               disabled={isBusy}
               type="button"
               onClick={() => openFilePicker("upload")}
             >
-              Upload an image
+              Upload photo or video
             </button>
           </>
         ) : (
           <>
-            <input ref={changeInputRef} accept="image/*" hidden type="file" onChange={handleInputChange} />
+            <input ref={changeInputRef} accept="image/*,video/*" hidden type="file" onChange={handleInputChange} />
             <button
               className="hero-upload-action hero-upload-action-secondary"
-              disabled={isBusy || isCeremony}
+              disabled={isBusy || isCeremony || isPreviewLoading}
               type="button"
               onClick={() => openFilePicker("change")}
             >
-              Change Photo
+              Change Media
             </button>
             <button
               className="hero-upload-action hero-upload-action-magic"
-              disabled={isBusy || isCeremony}
+              disabled={isBusy || isCeremony || isPreviewLoading}
               type="button"
               onClick={onMagicFrame}
             >

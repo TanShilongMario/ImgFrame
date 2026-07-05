@@ -18,11 +18,7 @@ export function useHeroUploadFlow({ isBusy, onMagicFrame }: UseHeroUploadFlowOpt
   const cardFlow = useUploadCardFlow({
     isBusy,
     onMagicFrame,
-    onAfterMagicFrame: () => setUploadPanelOpen(false),
-    getMagicOptions: () => ({
-      templateId: heroPreview.templateId,
-      previewParams: heroPreview.params
-    })
+    onAfterMagicFrame: () => setUploadPanelOpen(false)
   });
 
   useEffect(() => {
@@ -124,6 +120,7 @@ export function useHeroUploadFlow({ isBusy, onMagicFrame }: UseHeroUploadFlowOpt
     heroAssetRatio,
     uploadPanelOpen,
     previewUrl: cardFlow.previewUrl,
+    isPreviewLoading: cardFlow.isPreviewLoading,
     isDragOver: cardFlow.isDragOver,
     ceremonyPhase: cardFlow.ceremonyPhase,
     ceremonyLabel: cardFlow.ceremonyLabel,

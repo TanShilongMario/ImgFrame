@@ -86,7 +86,23 @@ export type GlassFrameConfig = {
   blur: number;
   outerRadius: number;
   textTone: GlassTextTone;
-  /** 由图像平均色派生的底层填充色（导出/预览复用） */
+  backingColor: BandColorChoice;
+  systemBackingHex?: string;
+  /** @deprecated 迁移至 systemBackingHex */
+  backingHex?: string;
+};
+
+export type GlassSillFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  edgeWidth: number;
+  bottomBand: number;
+  blur: number;
+  outerRadius: number;
+  textTone: GlassTextTone;
+  backingColor: BandColorChoice;
+  systemBackingHex?: string;
+  causticHex?: string;
+  /** @deprecated 迁移至 systemBackingHex */
   backingHex?: string;
 };
 
@@ -113,6 +129,7 @@ export type TemplateParams = {
   refinedFrame?: RefinedFrameConfig;
   gridFrame?: GridFrameConfig;
   glassFrame?: GlassFrameConfig;
+  glassSillFrame?: GlassSillFrameConfig;
   bandFrame?: BandFrameConfig;
 };
 

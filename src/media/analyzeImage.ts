@@ -1,3 +1,5 @@
+import { captureVideoFirstFrameUrl } from "./videoPoster";
+
 export type ImageAnalysis = {
   width: number;
   height: number;
@@ -49,6 +51,16 @@ export async function analyzeImageUrl(url: string): Promise<ImageAnalysis> {
 }
 
 export async function analyzeImageFile(file: File): Promise<ImageAnalysis> {
+  if (file.type.startsWith("video/")) {
+    const posterUrl = await captureVideoFirstFrameUrl(file);
+
+    try {
+      return await analyzeImageUrl(posterUrl);
+    } finally {
+      URL.revokeObjectURL(posterUrl);
+    }
+  }
+
   const url = URL.createObjectURL(file);
 
   try {

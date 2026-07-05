@@ -4,6 +4,7 @@ import type { LoadedMedia } from "./canvasUtils";
 import { renderBandFrame } from "./renderBandFrame";
 import { renderGlassFrame } from "./renderGlassFrame";
 import { renderGridFrame } from "./renderGridFrame";
+import { renderGlassSillFrame } from "./renderGlassSillFrame";
 import { renderRefinedBlurFrame } from "./renderRefinedBlurFrame";
 import { renderStandardFrame } from "./renderStandardFrame";
 
@@ -27,6 +28,10 @@ export function renderProjectFrame(
 
   if (template.family === "glass-frame") {
     return renderGlassFrame(project.templateParams, media, scale, format);
+  }
+
+  if (template.family === "glass-sill-frame") {
+    return renderGlassSillFrame(project.templateParams, media, scale);
   }
 
   if (template.family === "band-frame") {

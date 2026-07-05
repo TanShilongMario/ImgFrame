@@ -2,6 +2,7 @@ import type {
   BandFrameConfig,
   CanvasRatio,
   GlassFrameConfig,
+  GlassSillFrameConfig,
   GridFrameConfig,
   RefinedCanvasRatio,
   TemplateParams
@@ -27,6 +28,19 @@ import {
   resolveGlassBackingColor
 } from "../../templates/glassFrame";
 import {
+  deriveGlassSillBackingColor,
+  deriveGlassSillCausticColor,
+  getGlassSillCaptionColor,
+  getGlassSillInsetsPx,
+  getGlassSillInnerRadiusPx,
+  getGlassSillOuterRadiusPx,
+  getGlassSillPlateInsetPx,
+  getGlassSillPlateRadiusPx,
+  GLASS_SILL_BACKING_FALLBACK,
+  resolveGlassSillBackingColor,
+  resolveGlassSillCausticColor
+} from "../../templates/glassSillFrame";
+import {
   fallbackSystemColor,
   getBandCardRadiusPx,
   getBandTextColors,
@@ -39,7 +53,7 @@ import { useImageAspectRatio } from "../../hooks/useImageAspectRatio";
 import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type CardPreviewProps = {
   params: TemplateParams;
@@ -98,11 +112,13 @@ type GlassCardPreviewProps = {
   variant: CardPreviewProps["variant"];
   renderMedia: (alt: string) => ReactNode;
   mediaName: string;
+  mediaType?: "image" | "video";
 };
 
 function GlassCardPreview({
   glassFrame,
   mediaUrl,
+  mediaType = "image",
   params,
   ratio,
   ratioNumber,
@@ -113,36 +129,41 @@ function GlassCardPreview({
   const rootRef = useRef<HTMLDivElement>(null);
   const measuredWidth = useElementWidth(rootRef);
   const refWidth = measuredWidth || GLASS_RADIUS_REF_WIDTH;
-  const [sampledBackingHex, setSampledBackingHex] = useState<string | undefined>(glassFrame.backingHex);
+  const [sampledSystemBackingHex, setSampledSystemBackingHex] = useState<string | undefined>(
+    glassFrame.systemBackingHex
+  );
 
   useEffect(() => {
-    setSampledBackingHex(glassFrame.backingHex);
-  }, [glassFrame.backingHex]);
+    setSampledSystemBackingHex(glassFrame.systemBackingHex);
+  }, [glassFrame.systemBackingHex]);
 
   useEffect(() => {
-    if (glassFrame.backingHex || !mediaUrl) {
+    if (glassFrame.backingColor !== "system" || glassFrame.systemBackingHex || !mediaUrl) {
       return;
     }
 
     let cancelled = false;
-    void sampleAverageColorFromUrl(mediaUrl)
+    void sampleAverageColorFromUrl(mediaUrl, mediaType)
       .then((average) => {
         if (!cancelled) {
-          setSampledBackingHex(fallbackSystemColor(average, "backing"));
+          setSampledSystemBackingHex(fallbackSystemColor(average, "backing"));
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setSampledBackingHex(GLASS_BACKING_COLOR);
+          setSampledSystemBackingHex(GLASS_BACKING_COLOR);
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [glassFrame.backingHex, mediaUrl]);
+  }, [glassFrame.backingColor, glassFrame.systemBackingHex, mediaType, mediaUrl]);
 
-  const backingColor = resolveGlassBackingColor(sampledBackingHex);
+  const backingColor = resolveGlassBackingColor({
+    ...glassFrame,
+    systemBackingHex: glassFrame.systemBackingHex ?? sampledSystemBackingHex
+  });
   const refHeight = refWidth / ratioNumber;
   const insetsPx = getGlassInsetsPx(glassFrame, refWidth);
   const textColors = getGlassTextColors(glassFrame.textTone);
@@ -231,6 +252,183 @@ function GlassCardPreview({
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+type GlassSillCardPreviewProps = {
+  glassSillFrame: GlassSillFrameConfig;
+  mediaUrl?: string;
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+  renderMedia: (alt: string) => ReactNode;
+  mediaName: string;
+  mediaType?: "image" | "video";
+};
+
+function GlassSillCardPreview({
+  glassSillFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant,
+  renderMedia,
+  mediaName
+}: GlassSillCardPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || GLASS_RADIUS_REF_WIDTH;
+  const refHeight = refWidth / ratioNumber;
+  const [sampledColors, setSampledColors] = useState<{ systemBackingHex?: string; causticHex?: string }>({
+    systemBackingHex: glassSillFrame.systemBackingHex,
+    causticHex: glassSillFrame.causticHex
+  });
+
+  useEffect(() => {
+    setSampledColors({
+      systemBackingHex: glassSillFrame.systemBackingHex,
+      causticHex: glassSillFrame.causticHex
+    });
+  }, [glassSillFrame.systemBackingHex, glassSillFrame.causticHex]);
+
+  useEffect(() => {
+    const needsSystemBacking = glassSillFrame.backingColor === "system" && !glassSillFrame.systemBackingHex;
+    const needsCaustic = !glassSillFrame.causticHex;
+
+    if ((!needsSystemBacking && !needsCaustic) || !mediaUrl) {
+      return;
+    }
+
+    let cancelled = false;
+    void sampleAverageColorFromUrl(mediaUrl, mediaType)
+      .then((average) => {
+        if (!cancelled) {
+          setSampledColors({
+            systemBackingHex: needsSystemBacking ? deriveGlassSillBackingColor(average) : glassSillFrame.systemBackingHex,
+            causticHex: needsCaustic ? deriveGlassSillCausticColor(average) : glassSillFrame.causticHex
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSampledColors({
+            systemBackingHex: needsSystemBacking ? GLASS_SILL_BACKING_FALLBACK : glassSillFrame.systemBackingHex,
+            causticHex: needsCaustic ? "#f6f2ea" : glassSillFrame.causticHex
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    glassSillFrame.backingColor,
+    glassSillFrame.causticHex,
+    glassSillFrame.systemBackingHex,
+    mediaType,
+    mediaUrl
+  ]);
+
+  const backingColor = resolveGlassSillBackingColor({
+    ...glassSillFrame,
+    systemBackingHex: glassSillFrame.systemBackingHex ?? sampledColors.systemBackingHex
+  });
+  const causticColor = resolveGlassSillCausticColor(glassSillFrame.causticHex ?? sampledColors.causticHex);
+  const insetsPx = getGlassSillInsetsPx(glassSillFrame, refWidth);
+  const captionColor = getGlassSillCaptionColor(glassSillFrame.textTone);
+  const outerRadiusPx = getGlassSillOuterRadiusPx(glassSillFrame.outerRadius, refWidth);
+  const innerRadiusPx = getGlassSillInnerRadiusPx(glassSillFrame.edgeWidth, refWidth, glassSillFrame.outerRadius);
+  const plateInsetPx = getGlassSillPlateInsetPx(refWidth);
+  const plateRadiusPx = getGlassSillPlateRadiusPx(outerRadiusPx, plateInsetPx);
+  const windowMediaStyle = getGlassWindowMediaStylePx(insetsPx, refWidth, refHeight);
+  const blurPx = cssPx(glassSillFrame.blur, refWidth);
+  const captionTop = refHeight - insetsPx.bottom + (insetsPx.bottom - plateInsetPx) / 2;
+  const captionSize = cssPx(18, refWidth);
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(ratio, ratioNumber),
+          background: "transparent"
+        }
+      : variant === "hero"
+        ? {
+            background: "transparent",
+            height: "100%",
+            width: "100%"
+          }
+        : {
+            aspectRatio: ratio,
+            background: "transparent"
+          };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-glass card-preview-glass-sill`)}
+      style={stageStyle}
+    >
+      <div aria-hidden="true" className={surface("glass-preview-base")} style={{ background: backingColor }} />
+      <div
+        aria-hidden="true"
+        className={surface("glass-sill-caustic")}
+        style={
+          {
+            borderRadius: `${plateRadiusPx}px`,
+            inset: `${plateInsetPx}px`,
+            "--caustic-a": causticColor,
+            "--caustic-b": causticColor
+          } as CSSProperties
+        }
+      />
+      <div
+        className={surface("glass-preview-plate")}
+        style={{
+          borderRadius: `${plateRadiusPx}px`,
+          inset: `${plateInsetPx}px`
+        }}
+      >
+        <div className="glass-preview-plate-media">{renderMedia(mediaName)}</div>
+        <div
+          aria-hidden="true"
+          className={surface("glass-preview-plate-frost")}
+          style={{
+            backdropFilter: `blur(${blurPx}px) saturate(1.04)`,
+            WebkitBackdropFilter: `blur(${blurPx}px) saturate(1.04)`,
+            background: `rgba(255, 255, 255, ${GLASS_FROST_ALPHA})`
+          }}
+        />
+        <div aria-hidden="true" className={surface("glass-preview-outer-border")} />
+      </div>
+      <div
+        className={surface("glass-preview-window")}
+        style={{
+          borderRadius: `${innerRadiusPx}px`,
+          bottom: `${insetsPx.bottom}px`,
+          left: `${insetsPx.left}px`,
+          right: `${insetsPx.right}px`,
+          top: `${insetsPx.top}px`
+        }}
+      >
+        <div className={surface("glass-preview-window-media")} style={windowMediaStyle}>
+          {renderMedia(mediaName)}
+        </div>
+        <div aria-hidden="true" className="glass-preview-inset" />
+      </div>
+      <p
+        className={surface("glass-sill-caption")}
+        style={{
+          color: captionColor,
+          fontFamily: getFontStack(params.text.fontFamily),
+          fontSize: `${captionSize}px`,
+          top: `${captionTop}px`
+        }}
+      >
+        {params.text.title.slice(0, 40)}
+      </p>
     </div>
   );
 }
@@ -531,10 +729,15 @@ export function CardPreview({
   const refinedFrame = template?.family === "refined-blur-frame" ? params.refinedFrame : undefined;
   const gridFrame = template?.family === "grid-frame" ? params.gridFrame : undefined;
   const glassFrame = template?.family === "glass-frame" ? params.glassFrame : undefined;
+  const glassSillFrame = template?.family === "glass-sill-frame" ? params.glassSillFrame : undefined;
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl);
   const frameCanvasRatio =
-    refinedFrame?.canvasRatio ?? gridFrame?.canvasRatio ?? glassFrame?.canvasRatio ?? bandFrame?.canvasRatio;
+    refinedFrame?.canvasRatio ??
+    gridFrame?.canvasRatio ??
+    glassFrame?.canvasRatio ??
+    glassSillFrame?.canvasRatio ??
+    bandFrame?.canvasRatio;
   const { ratio, ratioNumber } = resolveCanvasRatio(frameCanvasRatio, imageRatio ?? undefined, params.canvas.ratio);
 
   function renderMedia(alt: string) {
@@ -581,11 +784,28 @@ export function CardPreview({
     );
   }
 
+  if (framed && glassSillFrame) {
+    return (
+      <GlassSillCardPreview
+        glassSillFrame={glassSillFrame}
+        mediaName={mediaName}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        renderMedia={renderMedia}
+        variant={variant}
+      />
+    );
+  }
+
   if (framed && glassFrame) {
     return (
       <GlassCardPreview
         glassFrame={glassFrame}
         mediaName={mediaName}
+        mediaType={mediaType}
         mediaUrl={mediaUrl}
         params={params}
         ratio={ratio}

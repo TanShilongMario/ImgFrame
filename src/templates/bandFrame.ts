@@ -1,4 +1,4 @@
-import type { BandColorChoice, BandFrameConfig } from "../types";
+import type { BandColorChoice, BandFrameConfig, MediaType } from "../types";
 
 export const BAND_FRAME_LIMITS = {
   outerMargin: { min: 0, max: 16 },
@@ -194,39 +194,117 @@ export function fallbackSystemColor(average: Rgb, target: "band" | "backing"): s
   return `#${toHex(mix(r, 245, ratio))}${toHex(mix(g, 240, ratio))}${toHex(mix(b, 232, ratio))}`;
 }
 
-/** 从 CanvasImageSource 同步取平均色（导出时用） */
-export function sampleAverageColorFromSource(source: CanvasImageSource): Rgb {
-  const size = 32;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const context = canvas.getContext("2d");
-  if (!context) {
-    return { r: 200, g: 190, b: 178 };
+const MATERIAL_TONE_SAMPLE_POINTS: Array<[number, number]> = [
+  [0.5, 0.5],
+  [0.28, 0.32],
+  [0.72, 0.32],
+  [0.22, 0.62],
+  [0.78, 0.62],
+  [0.5, 0.18],
+  [0.5, 0.82]
+];
+
+const MATERIAL_TONE_FALLBACK: Rgb = { r: 200, g: 190, b: 178 };
+
+function getCanvasImageSourceSize(source: CanvasImageSource): { width: number; height: number } {
+  if (source instanceof HTMLVideoElement) {
+    return { width: source.videoWidth, height: source.videoHeight };
   }
 
-  context.drawImage(source, 0, 0, size, size);
-  const { data } = context.getImageData(0, 0, size, size);
+  if (source instanceof HTMLImageElement) {
+    return { width: source.naturalWidth, height: source.naturalHeight };
+  }
+
+  if (source instanceof HTMLCanvasElement) {
+    return { width: source.width, height: source.height };
+  }
+
+  const bitmap = source as ImageBitmap;
+  return { width: bitmap.width, height: bitmap.height };
+}
+
+/** 多点位采样素材主色调（图片全图 / 视频首帧） */
+export function sampleMaterialToneFromSource(source: CanvasImageSource): Rgb {
+  const { width, height } = getCanvasImageSourceSize(source);
+  if (width <= 0 || height <= 0) {
+    return MATERIAL_TONE_FALLBACK;
+  }
+
+  const scale = Math.min(1, 512 / Math.max(width, height));
+  const canvasWidth = Math.max(1, Math.round(width * scale));
+  const canvasHeight = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return MATERIAL_TONE_FALLBACK;
+  }
+
+  context.drawImage(source, 0, 0, canvasWidth, canvasHeight);
+  const patchSize = Math.max(4, Math.round(16 * scale));
   let r = 0;
   let g = 0;
   let b = 0;
-  const count = data.length / 4;
-  for (let i = 0; i < data.length; i += 4) {
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
+  let count = 0;
+
+  for (const [normalizedX, normalizedY] of MATERIAL_TONE_SAMPLE_POINTS) {
+    const centerX = Math.round(normalizedX * canvasWidth);
+    const centerY = Math.round(normalizedY * canvasHeight);
+    const x = Math.max(0, Math.min(canvasWidth - patchSize, centerX - Math.floor(patchSize / 2)));
+    const y = Math.max(0, Math.min(canvasHeight - patchSize, centerY - Math.floor(patchSize / 2)));
+    const { data } = context.getImageData(x, y, patchSize, patchSize);
+
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count += 1;
+    }
+  }
+
+  if (count === 0) {
+    return MATERIAL_TONE_FALLBACK;
   }
 
   return { r: r / count, g: g / count, b: b / count };
 }
 
-/** 从图片 URL 异步取平均色（编辑器点击"系统"时用） */
-export function sampleAverageColorFromUrl(url: string): Promise<Rgb> {
+/** 从 CanvasImageSource 同步取平均色（导出时用） */
+export function sampleAverageColorFromSource(source: CanvasImageSource): Rgb {
+  return sampleMaterialToneFromSource(source);
+}
+
+async function sampleMaterialToneFromVideoUrl(url: string): Promise<Rgb> {
+  const video = document.createElement("video");
+  video.muted = true;
+  video.playsInline = true;
+  video.src = url;
+
+  await new Promise<void>((resolve, reject) => {
+    video.onloadeddata = () => resolve();
+    video.onerror = () => reject(new Error("无法读取视频配色。"));
+  });
+
+  video.currentTime = 0;
+  await new Promise<void>((resolve) => {
+    video.onseeked = () => resolve();
+  });
+
+  return sampleMaterialToneFromSource(video);
+}
+
+/** 从素材 URL 异步取主色调（图片 / 视频首帧） */
+export function sampleAverageColorFromUrl(url: string, mediaType: MediaType = "image"): Promise<Rgb> {
+  if (mediaType === "video") {
+    return sampleMaterialToneFromVideoUrl(url);
+  }
+
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
       try {
-        resolve(sampleAverageColorFromSource(image));
+        resolve(sampleMaterialToneFromSource(image));
       } catch (error) {
         reject(error);
       }

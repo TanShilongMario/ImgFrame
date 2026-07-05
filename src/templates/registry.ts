@@ -100,7 +100,40 @@ export const templateRegistry: TemplateDefinition[] = [
         bottomExtra: 1,
         blur: 30,
         outerRadius: 64,
-        textTone: "white"
+        textTone: "white",
+        backingColor: "system"
+      }
+    }
+  },
+  {
+    id: "glass-sill",
+    name: "沉璃",
+    family: "glass-sill-frame",
+    baseParams: {
+      ...defaultTemplateParams,
+      canvas: { ratio: "3:4", background: "#e8e8e5", padding: 0 },
+      media: {
+        radius: 0,
+        borderWidth: 0,
+        borderColor: "#ffffff",
+        shadow: { blur: 0, offsetX: 0, offsetY: 0, opacity: 0 },
+        crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+      },
+      text: {
+        title: "Arashiyama · Kyoto",
+        subtitle: "",
+        credit: "沉璃",
+        titleColor: "#ffffff",
+        fontFamily: "serif"
+      },
+      glassSillFrame: {
+        canvasRatio: "auto",
+        edgeWidth: 3.5,
+        bottomBand: 13,
+        blur: 32,
+        outerRadius: 56,
+        textTone: "white",
+        backingColor: "system"
       }
     }
   },

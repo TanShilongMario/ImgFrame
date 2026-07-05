@@ -161,8 +161,11 @@ export function renderGlassFrame(
   const blurPx = cssPx(glassFrame.blur, width);
   const plateInset = getGlassPlateInsetPx(width);
   const plate = getGlassPlateRect(width, height, plateInset, outerRadius);
-  const average = glassFrame.backingHex ? null : sampleAverageColorFromSource(media.source);
-  const backingColor = resolveGlassBackingColor(glassFrame.backingHex, average);
+  const average =
+    (glassFrame.backingColor === "system" && !glassFrame.systemBackingHex)
+      ? sampleAverageColorFromSource(media.source)
+      : null;
+  const backingColor = resolveGlassBackingColor(glassFrame, average);
 
   const innerX = insetsPx.left;
   const innerY = insetsPx.top;

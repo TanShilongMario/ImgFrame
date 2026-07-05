@@ -3,6 +3,7 @@ import { getTemplateById } from "../templates/registry";
 import type {
   BandFrameConfig,
   GlassFrameConfig,
+  GlassSillFrameConfig,
   GridFrameConfig,
   MediaAsset,
   Project,
@@ -10,6 +11,11 @@ import type {
   TemplateParams
 } from "../types";
 import { clampGlassFrame } from "../templates/glassFrame";
+import {
+  clampGlassSillFrame,
+  deriveGlassSillBackingColor,
+  deriveGlassSillCausticColor
+} from "../templates/glassSillFrame";
 import { clampGridFrame, withDerivedGridEffects } from "../templates/gridFrame";
 import { clampBandFrame, deriveSystemColor, fallbackSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
 import { normalizeTextFont, type TextFontId } from "../templates/fonts";
@@ -20,6 +26,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Field } from "./inspector/controls";
 import { BandFrameControls } from "./inspector/BandFrameControls";
 import { GlassFrameControls } from "./inspector/GlassFrameControls";
+import { GlassSillFrameControls } from "./inspector/GlassSillFrameControls";
 import { GridFrameControls } from "./inspector/GridFrameControls";
 import { RefinedFrameControls } from "./inspector/RefinedFrameControls";
 import type { HeroUploadOptions } from "./HeroPage";
@@ -58,38 +65,47 @@ export function EditorSection({
     activeTemplate?.family === "refined-blur-frame" ? project?.templateParams.refinedFrame : undefined;
   const gridFrame = activeTemplate?.family === "grid-frame" ? project?.templateParams.gridFrame : undefined;
   const glassFrame = activeTemplate?.family === "glass-frame" ? project?.templateParams.glassFrame : undefined;
+  const glassSillFrame =
+    activeTemplate?.family === "glass-sill-frame" ? project?.templateParams.glassSillFrame : undefined;
   const bandFrame = activeTemplate?.family === "band-frame" ? project?.templateParams.bandFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
   const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
+  const lastGlassSillSampleRef = useRef<{ mediaId?: string; backingHex?: string; causticHex?: string }>({});
 
   useEffect(() => {
-    if (!project || !glassFrame || !mediaUrl || !mediaAsset || activeTemplate?.family !== "glass-frame") {
+    if (
+      !project ||
+      !glassFrame ||
+      !mediaUrl ||
+      !mediaAsset ||
+      activeTemplate?.family !== "glass-frame" ||
+      glassFrame.backingColor !== "system"
+    ) {
       return;
     }
 
     if (
-      glassFrame.backingHex &&
-      lastGlassBackingSampleRef.current.mediaId === mediaAsset.id &&
-      lastGlassBackingSampleRef.current.hex === glassFrame.backingHex
+      glassFrame.systemBackingHex &&
+      lastGlassBackingSampleRef.current.mediaId === mediaAsset.id
     ) {
       return;
     }
 
     let cancelled = false;
 
-    void sampleAverageColorFromUrl(mediaUrl)
+    void sampleAverageColorFromUrl(mediaUrl, mediaAsset.type)
       .then((average) => {
         if (cancelled) {
           return;
         }
 
-        const backingHex = fallbackSystemColor(average, "backing");
-        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: backingHex };
+        const systemBackingHex = fallbackSystemColor(average, "backing");
+        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: systemBackingHex };
 
-        if (backingHex !== glassFrame.backingHex) {
+        if (systemBackingHex !== glassFrame.systemBackingHex) {
           onUpdateTemplateParams({
             ...project.templateParams,
-            glassFrame: clampGlassFrame({ ...glassFrame, backingHex })
+            glassFrame: clampGlassFrame({ ...glassFrame, backingColor: "system", systemBackingHex })
           });
         }
       })
@@ -98,13 +114,13 @@ export function EditorSection({
           return;
         }
 
-        const backingHex = fallbackSystemColor({ r: 202, g: 188, b: 170 }, "backing");
-        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: backingHex };
+        const systemBackingHex = fallbackSystemColor({ r: 202, g: 188, b: 170 }, "backing");
+        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: systemBackingHex };
 
-        if (backingHex !== glassFrame.backingHex) {
+        if (systemBackingHex !== glassFrame.systemBackingHex) {
           onUpdateTemplateParams({
             ...project.templateParams,
-            glassFrame: clampGlassFrame({ ...glassFrame, backingHex })
+            glassFrame: clampGlassFrame({ ...glassFrame, backingColor: "system", systemBackingHex })
           });
         }
       });
@@ -115,6 +131,95 @@ export function EditorSection({
   }, [
     activeTemplate?.family,
     glassFrame,
+    mediaAsset,
+    mediaUrl,
+    onUpdateTemplateParams,
+    project
+  ]);
+
+  useEffect(() => {
+    if (!project || !glassSillFrame || !mediaUrl || !mediaAsset || activeTemplate?.family !== "glass-sill-frame") {
+      return;
+    }
+
+    const needsSystemBacking = glassSillFrame.backingColor === "system";
+    const needsCaustic = !glassSillFrame.causticHex;
+
+    if (!needsSystemBacking && !needsCaustic) {
+      return;
+    }
+
+    if (
+      lastGlassSillSampleRef.current.mediaId === mediaAsset.id &&
+      (!needsSystemBacking || glassSillFrame.systemBackingHex) &&
+      (!needsCaustic || glassSillFrame.causticHex)
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void sampleAverageColorFromUrl(mediaUrl, mediaAsset.type)
+      .then((average) => {
+        if (cancelled) {
+          return;
+        }
+
+        const systemBackingHex = needsSystemBacking
+          ? deriveGlassSillBackingColor(average)
+          : glassSillFrame.systemBackingHex;
+        const causticHex = needsCaustic ? deriveGlassSillCausticColor(average) : glassSillFrame.causticHex;
+        lastGlassSillSampleRef.current = { mediaId: mediaAsset.id, backingHex: systemBackingHex, causticHex };
+
+        if (
+          systemBackingHex !== glassSillFrame.systemBackingHex ||
+          (needsCaustic && causticHex !== glassSillFrame.causticHex)
+        ) {
+          onUpdateTemplateParams({
+            ...project.templateParams,
+            glassSillFrame: clampGlassSillFrame({
+              ...glassSillFrame,
+              systemBackingHex,
+              causticHex
+            })
+          });
+        }
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        const fallbackAverage = { r: 202, g: 188, b: 170 };
+        const systemBackingHex = needsSystemBacking
+          ? deriveGlassSillBackingColor(fallbackAverage)
+          : glassSillFrame.systemBackingHex;
+        const causticHex = needsCaustic
+          ? deriveGlassSillCausticColor(fallbackAverage)
+          : glassSillFrame.causticHex;
+        lastGlassSillSampleRef.current = { mediaId: mediaAsset.id, backingHex: systemBackingHex, causticHex };
+
+        if (
+          systemBackingHex !== glassSillFrame.systemBackingHex ||
+          (needsCaustic && causticHex !== glassSillFrame.causticHex)
+        ) {
+          onUpdateTemplateParams({
+            ...project.templateParams,
+            glassSillFrame: clampGlassSillFrame({
+              ...glassSillFrame,
+              systemBackingHex,
+              causticHex
+            })
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeTemplate?.family,
+    glassSillFrame,
     mediaAsset,
     mediaUrl,
     onUpdateTemplateParams,
@@ -165,6 +270,17 @@ export function EditorSection({
     });
   }
 
+  function updateGlassSillFrame(nextFrame: GlassSillFrameConfig) {
+    if (!project) {
+      return;
+    }
+
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      glassSillFrame: clampGlassSillFrame(nextFrame)
+    });
+  }
+
   function updateBandFrame(nextFrame: BandFrameConfig) {
     if (!project) {
       return;
@@ -212,7 +328,7 @@ export function EditorSection({
     let hex: string | undefined;
     if (mediaUrl) {
       try {
-        const average = await sampleAverageColorFromUrl(mediaUrl);
+        const average = await sampleAverageColorFromUrl(mediaUrl, mediaAsset?.type ?? "image");
         hex = deriveSystemColor(average, target);
       } catch {
         hex = undefined;
@@ -227,6 +343,65 @@ export function EditorSection({
       ...(target === "band"
         ? { bandColor: "system", systemBandHex: hex }
         : { backingColor: "system", systemBackingHex: hex })
+    });
+  }
+
+  async function applyGlassSystemBacking() {
+    if (!glassFrame) {
+      return;
+    }
+
+    const fallbackAverage = { r: 202, g: 188, b: 170 };
+    let systemBackingHex: string | undefined;
+    if (mediaUrl) {
+      try {
+        const average = await sampleAverageColorFromUrl(mediaUrl, mediaAsset?.type ?? "image");
+        systemBackingHex = deriveSystemColor(average, "backing");
+      } catch {
+        systemBackingHex = undefined;
+      }
+    }
+    if (!systemBackingHex) {
+      systemBackingHex = deriveSystemColor(fallbackAverage, "backing");
+    }
+
+    lastGlassBackingSampleRef.current = { mediaId: mediaAsset?.id, hex: systemBackingHex };
+
+    updateGlassFrame({
+      ...glassFrame,
+      backingColor: "system",
+      systemBackingHex
+    });
+  }
+
+  async function applyGlassSillSystemBacking() {
+    if (!glassSillFrame) {
+      return;
+    }
+
+    const fallbackAverage = { r: 202, g: 188, b: 170 };
+    let average = fallbackAverage;
+    if (mediaUrl) {
+      try {
+        average = await sampleAverageColorFromUrl(mediaUrl, mediaAsset?.type ?? "image");
+      } catch {
+        average = fallbackAverage;
+      }
+    }
+
+    const systemBackingHex = deriveGlassSillBackingColor(average, { jitter: true });
+    const causticHex = deriveGlassSillCausticColor(average, { jitter: true });
+    lastGlassSillSampleRef.current = {
+      mediaId: mediaAsset?.id,
+      backingHex: systemBackingHex,
+      causticHex
+    };
+
+    updateGlassSillFrame({
+      ...glassSillFrame,
+      backingColor: "system",
+      systemBackingHex,
+      causticHex
     });
   }
 
@@ -333,9 +508,20 @@ export function EditorSection({
                 frame={glassFrame}
                 subtitle={project?.templateParams.text.subtitle ?? ""}
                 title={project?.templateParams.text.title ?? ""}
+                onApplySystemBacking={() => void applyGlassSystemBacking()}
                 onChangeFont={updateFont}
                 onChangeFrame={updateGlassFrame}
                 onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 24 : 48)}
+              />
+            ) : glassSillFrame ? (
+              <GlassSillFrameControls
+                caption={project?.templateParams.text.title ?? ""}
+                font={activeFont}
+                frame={glassSillFrame}
+                onApplySystemBacking={() => void applyGlassSillSystemBacking()}
+                onChangeCaption={(value) => updateTextField("title", value, 40)}
+                onChangeFont={updateFont}
+                onChangeFrame={updateGlassSillFrame}
               />
             ) : bandFrame ? (
               <BandFrameControls

@@ -1,5 +1,5 @@
-import type { GlassFrameConfig, GlassTextTone } from "../../types";
-import { GLASS_FRAME_LIMITS } from "../../templates/glassFrame";
+import type { GlassSillFrameConfig, GlassTextTone } from "../../types";
+import { GLASS_SILL_FRAME_LIMITS } from "../../templates/glassSillFrame";
 import type { TextFontId } from "../../templates/fonts";
 import { FontControl, PresetColorControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption } from "./controls";
 
@@ -9,22 +9,20 @@ const TEXT_TONE_OPTIONS: SegmentedOption<GlassTextTone>[] = [
   { value: "gray", label: "灰" }
 ];
 
-export function GlassFrameControls({
+export function GlassSillFrameControls({
   frame,
-  title,
-  subtitle,
+  caption,
   font,
   onChangeFrame,
-  onChangeText,
+  onChangeCaption,
   onChangeFont,
   onApplySystemBacking
 }: {
-  frame: GlassFrameConfig;
-  title: string;
-  subtitle: string;
+  frame: GlassSillFrameConfig;
+  caption: string;
   font: TextFontId;
-  onChangeFrame: (frame: GlassFrameConfig) => void;
-  onChangeText: (field: "title" | "subtitle", value: string) => void;
+  onChangeFrame: (frame: GlassSillFrameConfig) => void;
+  onChangeCaption: (value: string) => void;
   onChangeFont: (font: TextFontId) => void;
   onApplySystemBacking: () => void;
 }) {
@@ -39,26 +37,26 @@ export function GlassFrameControls({
       />
       <RangeControl
         label="边缘宽度"
-        max={GLASS_FRAME_LIMITS.edgeWidth.max}
-        min={GLASS_FRAME_LIMITS.edgeWidth.min}
+        max={GLASS_SILL_FRAME_LIMITS.edgeWidth.max}
+        min={GLASS_SILL_FRAME_LIMITS.edgeWidth.min}
         step={0.5}
         suffix="%"
         value={frame.edgeWidth}
         onChange={(value) => onChangeFrame({ ...frame, edgeWidth: value })}
       />
       <RangeControl
-        label="底边加厚"
-        max={GLASS_FRAME_LIMITS.bottomExtra.max}
-        min={GLASS_FRAME_LIMITS.bottomExtra.min}
+        label="底边厚度"
+        max={GLASS_SILL_FRAME_LIMITS.bottomBand.max}
+        min={GLASS_SILL_FRAME_LIMITS.bottomBand.min}
         step={0.5}
         suffix="%"
-        value={frame.bottomExtra}
-        onChange={(value) => onChangeFrame({ ...frame, bottomExtra: value })}
+        value={frame.bottomBand}
+        onChange={(value) => onChangeFrame({ ...frame, bottomBand: value })}
       />
       <RangeControl
         label="圆角大小"
-        max={GLASS_FRAME_LIMITS.outerRadius.max}
-        min={GLASS_FRAME_LIMITS.outerRadius.min}
+        max={GLASS_SILL_FRAME_LIMITS.outerRadius.max}
+        min={GLASS_SILL_FRAME_LIMITS.outerRadius.min}
         step={2}
         suffix="px"
         value={frame.outerRadius}
@@ -66,8 +64,8 @@ export function GlassFrameControls({
       />
       <RangeControl
         label="磨砂模糊"
-        max={GLASS_FRAME_LIMITS.blur.max}
-        min={GLASS_FRAME_LIMITS.blur.min}
+        max={GLASS_SILL_FRAME_LIMITS.blur.max}
+        min={GLASS_SILL_FRAME_LIMITS.blur.min}
         step={1}
         suffix="px"
         value={frame.blur}
@@ -83,13 +81,7 @@ export function GlassFrameControls({
         />
       </div>
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="标题" maxLength={24} value={title} onChange={(value) => onChangeText("title", value)} />
-      <TextAreaControl
-        label="副标题"
-        maxLength={48}
-        value={subtitle}
-        onChange={(value) => onChangeText("subtitle", value)}
-      />
+      <TextAreaControl label="底边文字" maxLength={40} value={caption} onChange={onChangeCaption} />
     </>
   );
 }

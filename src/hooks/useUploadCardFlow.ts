@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createMediaPreviewUrl, isUploadableMediaFile } from "../media/videoPoster";
 import { randomizeTemplatePick } from "../templates/randomize";
 import type { HeroCeremonyPhase } from "../ui/components/HeroUploadPanel";
 import type { HeroUploadOptions } from "../ui/HeroPage";
@@ -11,10 +12,6 @@ const CEREMONY_STEPS: Array<{ phase: HeroCeremonyPhase; label: string; delay: nu
   { phase: "done", label: "定格完成 · 即将进入编辑器", delay: 4600 }
 ];
 
-function isImageFile(file: File): boolean {
-  return file.type.startsWith("image/");
-}
-
 function wait(ms: number) {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -25,19 +22,19 @@ type UseUploadCardFlowOptions = {
   isBusy: boolean;
   onMagicFrame: (file: File, options: HeroUploadOptions) => void | Promise<void>;
   onAfterMagicFrame?: () => void;
-  getMagicOptions?: () => HeroUploadOptions;
 };
 
 export function useUploadCardFlow({
   isBusy,
   onMagicFrame,
-  onAfterMagicFrame,
-  getMagicOptions
+  onAfterMagicFrame
 }: UseUploadCardFlowOptions) {
   const previewUrlRef = useRef<string | null>(null);
-  const [fallbackPreview] = useState(() => randomizeTemplatePick());
+  const previewGenerationRef = useRef(0);
+  const lastMagicTemplateRef = useRef<string | undefined>(undefined);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ceremonyPhase, setCeremonyPhase] = useState<HeroCeremonyPhase>("idle");
   const [ceremonyLabel, setCeremonyLabel] = useState("");
@@ -50,23 +47,44 @@ export function useUploadCardFlow({
     };
   }, []);
 
-  function setPreviewFromFile(file: File) {
+  async function setPreviewFromFile(file: File) {
+    const generation = ++previewGenerationRef.current;
+
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
     }
 
-    const nextUrl = URL.createObjectURL(file);
-    previewUrlRef.current = nextUrl;
-    setPreviewUrl(nextUrl);
     setSelectedFile(file);
+    setPreviewUrl(null);
+    setIsPreviewLoading(true);
+
+    try {
+      const nextUrl = await createMediaPreviewUrl(file);
+      if (generation !== previewGenerationRef.current) {
+        URL.revokeObjectURL(nextUrl);
+        return;
+      }
+
+      previewUrlRef.current = nextUrl;
+      setPreviewUrl(nextUrl);
+    } catch {
+      if (generation === previewGenerationRef.current) {
+        setSelectedFile(null);
+      }
+    } finally {
+      if (generation === previewGenerationRef.current) {
+        setIsPreviewLoading(false);
+      }
+    }
   }
 
   function handleFileSelect(file?: File) {
-    if (!file || !isImageFile(file) || isBusy || ceremonyPhase !== "idle") {
+    if (!file || !isUploadableMediaFile(file) || isBusy || ceremonyPhase !== "idle") {
       return;
     }
 
-    setPreviewFromFile(file);
+    void setPreviewFromFile(file);
   }
 
   function handlePanelDragEnter() {
@@ -82,7 +100,9 @@ export function useUploadCardFlow({
   }
 
   function resetPreview() {
+    previewGenerationRef.current += 1;
     setSelectedFile(null);
+    setIsPreviewLoading(false);
 
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -94,7 +114,7 @@ export function useUploadCardFlow({
   }
 
   async function handleMagicFrame() {
-    if (!selectedFile || isBusy || ceremonyPhase !== "idle") {
+    if (!selectedFile || !previewUrl || isBusy || ceremonyPhase !== "idle" || isPreviewLoading) {
       return;
     }
 
@@ -111,13 +131,14 @@ export function useUploadCardFlow({
         previousDelay = step.delay;
       }
 
-      // 白光定格后多停留一拍，让"惊喜"落地再进入编辑器
+      // 波点淡出后多停留一拍，再进入编辑器
       await wait(1050);
-      const magicOptions = getMagicOptions?.() ?? {
-        previewParams: fallbackPreview.params,
-        templateId: fallbackPreview.templateId
-      };
-      await onMagicFrame(selectedFile, magicOptions);
+      const picked = randomizeTemplatePick(lastMagicTemplateRef.current);
+      lastMagicTemplateRef.current = picked.templateId;
+      await onMagicFrame(selectedFile, {
+        templateId: picked.templateId,
+        previewParams: picked.params
+      });
     } finally {
       setCeremonyPhase("idle");
       setCeremonyLabel("");
@@ -128,6 +149,7 @@ export function useUploadCardFlow({
 
   return {
     previewUrl,
+    isPreviewLoading,
     isDragOver,
     ceremonyPhase,
     ceremonyLabel,

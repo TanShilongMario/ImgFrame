@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { getTemplateById } from "../templates/registry";
 import type {
   BandFrameConfig,
@@ -10,7 +11,7 @@ import type {
 } from "../types";
 import { clampGlassFrame } from "../templates/glassFrame";
 import { clampGridFrame, withDerivedGridEffects } from "../templates/gridFrame";
-import { clampBandFrame, deriveSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
+import { clampBandFrame, deriveSystemColor, fallbackSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
 import { normalizeTextFont, type TextFontId } from "../templates/fonts";
 import { CardPreview } from "./components/CardPreview";
 import { EditorEmptyStage } from "./components/EditorEmptyStage";
@@ -27,15 +28,9 @@ type EditorSectionProps = {
   project: Project | null;
   mediaAsset: MediaAsset | null;
   mediaUrl?: string;
-  status: string;
   isBusy: boolean;
-  editorRailsVisible: boolean;
-  templateListOpen: boolean;
-  frameOpen: boolean;
   onUpload: (file?: File) => void;
   onNavigate: (section: "hero" | "editor" | "gallery") => void;
-  onToggleTemplateList: () => void;
-  onToggleFrame: () => void;
   onShuffleParams: () => void;
   onSaveToAlbum: () => void;
   onDownloadResult: () => void;
@@ -48,15 +43,9 @@ export function EditorSection({
   project,
   mediaAsset,
   mediaUrl,
-  status,
   isBusy,
-  editorRailsVisible,
-  templateListOpen,
-  frameOpen,
   onUpload,
   onNavigate,
-  onToggleTemplateList,
-  onToggleFrame,
   onShuffleParams,
   onSaveToAlbum,
   onDownloadResult,
@@ -71,6 +60,66 @@ export function EditorSection({
   const glassFrame = activeTemplate?.family === "glass-frame" ? project?.templateParams.glassFrame : undefined;
   const bandFrame = activeTemplate?.family === "band-frame" ? project?.templateParams.bandFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
+  const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
+
+  useEffect(() => {
+    if (!project || !glassFrame || !mediaUrl || !mediaAsset || activeTemplate?.family !== "glass-frame") {
+      return;
+    }
+
+    if (
+      glassFrame.backingHex &&
+      lastGlassBackingSampleRef.current.mediaId === mediaAsset.id &&
+      lastGlassBackingSampleRef.current.hex === glassFrame.backingHex
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void sampleAverageColorFromUrl(mediaUrl)
+      .then((average) => {
+        if (cancelled) {
+          return;
+        }
+
+        const backingHex = fallbackSystemColor(average, "backing");
+        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: backingHex };
+
+        if (backingHex !== glassFrame.backingHex) {
+          onUpdateTemplateParams({
+            ...project.templateParams,
+            glassFrame: clampGlassFrame({ ...glassFrame, backingHex })
+          });
+        }
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        const backingHex = fallbackSystemColor({ r: 202, g: 188, b: 170 }, "backing");
+        lastGlassBackingSampleRef.current = { mediaId: mediaAsset.id, hex: backingHex };
+
+        if (backingHex !== glassFrame.backingHex) {
+          onUpdateTemplateParams({
+            ...project.templateParams,
+            glassFrame: clampGlassFrame({ ...glassFrame, backingHex })
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeTemplate?.family,
+    glassFrame,
+    mediaAsset,
+    mediaUrl,
+    onUpdateTemplateParams,
+    project
+  ]);
 
   function updateRefinedFrame(nextFrame: RefinedFrameConfig) {
     if (!project) {
@@ -182,12 +231,10 @@ export function EditorSection({
   }
 
   return (
-    <div className={`workspace-shell${editorRailsVisible ? " is-rails-visible" : ""}`}>
+    <div className="workspace-shell">
         <Sidebar
         activeTemplateId={project?.templateId}
-        templateListOpen={templateListOpen}
         onSelectTemplate={onSelectTemplate}
-        onToggleTemplateList={onToggleTemplateList}
       />
 
       <section className="stage">
@@ -235,8 +282,8 @@ export function EditorSection({
                 className="stage-action-download"
                 disabled={!project || !mediaAsset || isBusy}
                 kind="download"
-                label="下载结果图"
-                title="下载结果图"
+                label={mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
+                title={mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
                 onClick={onDownloadResult}
               />
             </div>
@@ -256,13 +303,11 @@ export function EditorSection({
       <aside className="inspector workspace-rail">
         <div className="workspace-rail-panel">
         <div className="workspace-rail-scroll inspector-rail-scroll">
-        <section className={`panel control-panel ${frameOpen ? "is-expanded" : "is-collapsed"}`}>
-          <button className="panel-heading" type="button" onClick={onToggleFrame}>
+        <section className="panel control-panel">
+          <div className="panel-heading panel-heading-static">
             <span>Frame</span>
-            <span className="panel-chevron" aria-hidden="true" />
-          </button>
+          </div>
           <div className="panel-content">
-            <Field label="Template" value={activeTemplate?.name ?? "-"} />
             {refinedFrame ? (
               <RefinedFrameControls
                 credit={project?.templateParams.text.credit ?? ""}
@@ -314,11 +359,6 @@ export function EditorSection({
           </div>
         </section>
         </div>
-
-        <section className="inspector-summary workspace-rail-footer">
-          <h2>Design</h2>
-          <p>{status}</p>
-        </section>
         </div>
       </aside>
       </div>

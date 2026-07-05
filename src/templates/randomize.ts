@@ -57,10 +57,12 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
       },
       glassFrame: clampGlassFrame({
         ...base.glassFrame,
-        edgeWidth: Number((1.5 + Math.random() * 3.5).toFixed(1)),
+        edgeWidth: Number((2 + Math.random() * 4).toFixed(1)),
         bottomExtra: Number((Math.random() * 4).toFixed(1)),
         blur: range(20, 40),
-        textTone: pick(["white", "black", "gray"] as const)
+        outerRadius: range(48, 80),
+        textTone: pick(["white", "black", "gray"] as const),
+        backingHex: undefined
       })
     };
   }

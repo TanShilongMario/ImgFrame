@@ -1,18 +1,17 @@
+import { Dices } from "lucide-react";
 import type { BandColorChoice, BandFrameConfig } from "../../types";
-import { BAND_FIXED_COLORS, BAND_FRAME_LIMITS, resolveBandColor } from "../../templates/bandFrame";
+import { BAND_FIXED_COLORS, BAND_FRAME_LIMITS } from "../../templates/bandFrame";
 import type { TextFontId } from "../../templates/fonts";
 import { FontControl, RangeControl, RatioControl, TextAreaControl } from "./controls";
 
 function BandColorControl({
   label,
   value,
-  systemHex,
   onPick,
   onSystem
 }: {
   label: string;
   value: BandColorChoice;
-  systemHex?: string;
   onPick: (choice: BandColorChoice) => void;
   onSystem: () => void;
 }) {
@@ -20,34 +19,32 @@ function BandColorControl({
     <div className="field field-control band-color-field">
       <span>{label}</span>
       <div className="band-color-control">
-        <div className="band-color-row">
+        <div className="segmented-control segmented-control-colors band-color-row">
           {BAND_FIXED_COLORS.map((option) => (
             <button
               key={option.id}
               aria-label={option.label}
               aria-pressed={value === option.id}
               className={`band-color-swatch${value === option.id ? " is-active" : ""}`}
-              style={{ background: option.hex }}
               title={option.label}
               type="button"
               onClick={() => onPick(option.id)}
-            />
+            >
+              <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
+            </button>
           ))}
         </div>
-        <button
-          aria-pressed={value === "system"}
-          className={`band-color-system${value === "system" ? " is-active" : ""}`}
-          type="button"
-          onClick={onSystem}
-        >
-          <span
-            aria-hidden="true"
-            className="band-color-system-dot"
-            style={{ background: resolveBandColor("system", systemHex) }}
-          />
-          <span className="band-color-system-label">系统配色</span>
-          <span className="band-color-system-hint">换一换</span>
-        </button>
+        <div className="segmented-control band-color-system-row">
+          <button
+            aria-pressed={value === "system"}
+            className={value === "system" ? "is-active" : ""}
+            type="button"
+            onClick={onSystem}
+          >
+            <Dices aria-hidden="true" size={14} strokeWidth={2.2} />
+            系统配色
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -114,14 +111,12 @@ export function BandFrameControls({
       <BandColorControl
         label="腰封颜色"
         value={frame.bandColor}
-        systemHex={frame.systemBandHex}
         onPick={(choice) => onChangeFrame({ ...frame, bandColor: choice })}
         onSystem={() => onApplySystemColor("band")}
       />
       <BandColorControl
         label="衬底颜色"
         value={frame.backingColor}
-        systemHex={frame.systemBackingHex}
         onPick={(choice) => onChangeFrame({ ...frame, backingColor: choice })}
         onSystem={() => onApplySystemColor("backing")}
       />

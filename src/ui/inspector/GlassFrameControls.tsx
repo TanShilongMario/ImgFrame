@@ -48,6 +48,15 @@ export function GlassFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, bottomExtra: value })}
       />
       <RangeControl
+        label="圆角大小"
+        max={GLASS_FRAME_LIMITS.outerRadius.max}
+        min={GLASS_FRAME_LIMITS.outerRadius.min}
+        step={2}
+        suffix="px"
+        value={frame.outerRadius}
+        onChange={(value) => onChangeFrame({ ...frame, outerRadius: value })}
+      />
+      <RangeControl
         label="磨砂模糊"
         max={GLASS_FRAME_LIMITS.blur.max}
         min={GLASS_FRAME_LIMITS.blur.min}

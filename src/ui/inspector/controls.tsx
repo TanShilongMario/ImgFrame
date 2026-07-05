@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { RefinedCanvasRatio } from "../../types";
 import { TEXT_FONT_OPTIONS, type TextFontId } from "../../templates/fonts";
 
@@ -9,6 +9,26 @@ export function Field({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+function getStepDecimals(step: number) {
+  if (!String(step).includes(".")) {
+    return 0;
+  }
+
+  return String(step).split(".")[1]?.length ?? 0;
+}
+
+function formatRangeValue(value: number, step: number) {
+  const decimals = getStepDecimals(step);
+  return decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+}
+
+function snapRangeValue(value: number, min: number, max: number, step: number) {
+  const decimals = getStepDecimals(step);
+  const snapped = Math.round((value - min) / step) * step + min;
+  const clamped = Math.min(max, Math.max(min, snapped));
+  return Number(clamped.toFixed(decimals));
 }
 
 export function RangeControl({
@@ -28,22 +48,81 @@ export function RangeControl({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const ratio = max === min ? 0 : (value - min) / (max - min);
+  const [draft, setDraft] = useState(() => formatRangeValue(value, step));
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(formatRangeValue(value, step));
+    }
+  }, [value, step, isEditing]);
+
+  function commitDraft(raw: string) {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      setDraft(formatRangeValue(value, step));
+      return;
+    }
+
+    const parsed = Number(trimmed);
+    if (Number.isNaN(parsed)) {
+      setDraft(formatRangeValue(value, step));
+      return;
+    }
+
+    onChange(snapRangeValue(parsed, min, max, step));
+  }
+
   return (
-    <label className="field field-control range-control">
+    <div className="field field-control range-control">
       <span>{label}</span>
-      <strong>
-        {value}
-        {suffix}
-      </strong>
-      <input
-        max={max}
-        min={min}
-        step={step}
-        type="range"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </label>
+      <div className="range-control-row">
+        <div className="range-track-shell">
+          <div className="range-track-inner">
+            <div aria-hidden="true" className="range-track-fill-clip" style={{ width: `${ratio * 100}%` }}>
+              <div className="range-track-fill" />
+            </div>
+            <input
+              aria-label={label}
+              className="range-track-input"
+              max={max}
+              min={min}
+              step={step}
+              type="range"
+              value={value}
+              onChange={(event) => onChange(Number(event.target.value))}
+            />
+          </div>
+        </div>
+        <div className="range-control-value">
+          <input
+            aria-label={`${label}数值`}
+            className="range-control-value-input"
+            inputMode="decimal"
+            type="text"
+            value={draft}
+            onBlur={() => {
+              setIsEditing(false);
+              commitDraft(draft);
+            }}
+            onChange={(event) => {
+              const next = event.target.value;
+              if (next === "" || /^-?\d*\.?\d*$/.test(next)) {
+                setDraft(next);
+              }
+            }}
+            onFocus={() => setIsEditing(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              }
+            }}
+          />
+          {suffix ? <span className="range-control-value-suffix">{suffix}</span> : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -139,9 +218,11 @@ export function TextAreaControl({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="field text-control">
+    <div className="field text-control">
       <span>{label}</span>
-      <textarea maxLength={maxLength} value={value} onChange={(event) => onChange(event.target.value)} />
-    </label>
+      <div className="range-track-shell text-control-shell">
+        <textarea maxLength={maxLength} value={value} onChange={(event) => onChange(event.target.value)} />
+      </div>
+    </div>
   );
 }

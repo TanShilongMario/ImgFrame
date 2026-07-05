@@ -9,6 +9,51 @@ export type LoadedMedia = {
   height: number;
 };
 
+function getSourceSize(source: CanvasImageSource): { width: number; height: number } {
+  if (source instanceof HTMLVideoElement) {
+    return { width: source.videoWidth, height: source.videoHeight };
+  }
+
+  if (source instanceof HTMLImageElement) {
+    return { width: source.naturalWidth, height: source.naturalHeight };
+  }
+
+  if (source instanceof HTMLCanvasElement) {
+    return { width: source.width, height: source.height };
+  }
+
+  const bitmap = source as ImageBitmap;
+  return { width: bitmap.width, height: bitmap.height };
+}
+
+export async function loadVideoElement(objectUrl: string): Promise<HTMLVideoElement> {
+  const video = document.createElement("video");
+  video.playsInline = true;
+  video.preload = "auto";
+  video.src = objectUrl;
+
+  await new Promise<void>((resolve, reject) => {
+    video.onloadeddata = () => resolve();
+    video.onerror = () => reject(new Error("无法加载视频。"));
+  });
+
+  return video;
+}
+
+export function createLoadedMediaFromVideo(video: HTMLVideoElement): LoadedMedia {
+  return {
+    source: video,
+    width: video.videoWidth,
+    height: video.videoHeight
+  };
+}
+
+export function waitForVideoSeek(video: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve) => {
+    video.onseeked = () => resolve();
+  });
+}
+
 function loadHtmlImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -70,8 +115,7 @@ export function drawCoverImage(
   dh: number,
   focalY = 0.42
 ) {
-  const sourceWidth = "naturalWidth" in source ? source.naturalWidth : (source as ImageBitmap).width;
-  const sourceHeight = "naturalHeight" in source ? source.naturalHeight : (source as ImageBitmap).height;
+  const { width: sourceWidth, height: sourceHeight } = getSourceSize(source);
   const sourceRatio = sourceWidth / sourceHeight;
   const destRatio = dw / dh;
 

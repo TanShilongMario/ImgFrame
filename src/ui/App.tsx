@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildGalleryBatch, type GalleryEntry } from "../gallery/catalog";
-// import { useAppTheme } from "../hooks/useAppTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useOrchestratedNavigation } from "../hooks/useOrchestratedNavigation";
 import { analyzeImageFile } from "../media/analyzeImage";
 import { createMediaAsset } from "../media/metadata";
@@ -20,6 +20,8 @@ import type { MediaAsset, Project } from "../types";
 import { createId } from "../utils/id";
 import { downloadBlob, sanitizeFilename } from "../export/canvasUtils";
 import { exportProjectImage } from "../export/exportProjectImage";
+import { exportProjectVideo } from "../export/exportProjectVideo";
+import { preloadFfmpeg } from "../export/transcodeToMp4";
 import { AlbumSection } from "./AlbumSection";
 import { EditorSection } from "./EditorSection";
 import { GallerySection } from "./GallerySection";
@@ -31,9 +33,8 @@ const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未�
 
 export function App() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { activeSection, editorRailsVisible, navigateTo } = useOrchestratedNavigation(scrollRef);
-  // const { theme, toggleTheme } = useAppTheme();
-  const showEditorRails = editorRailsVisible && activeSection === "editor";
+  const { activeSection, navigateTo } = useOrchestratedNavigation(scrollRef);
+  useAppTheme();
   const [project, setProject] = useState<Project | null>(null);
   const [mediaAsset, setMediaAsset] = useState<MediaAsset | null>(null);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
@@ -53,8 +54,6 @@ export function App() {
   }, [status]);
   const [isBusy, setIsBusy] = useState(false);
   const [galleryBatchSeed, setGalleryBatchSeed] = useState(() => Date.now());
-  const [templateListOpen, setTemplateListOpen] = useState(true);
-  const [frameOpen, setFrameOpen] = useState(true);
   const galleryEntries = useMemo(() => buildGalleryBatch(galleryBatchSeed), [galleryBatchSeed]);
 
   useEffect(() => {
@@ -93,6 +92,10 @@ export function App() {
 
     const url = URL.createObjectURL(mediaAsset.blob);
     setMediaUrl(url);
+
+    if (mediaAsset.type === "video") {
+      preloadFfmpeg();
+    }
 
     return () => URL.revokeObjectURL(url);
   }, [mediaAsset]);
@@ -338,9 +341,35 @@ export function App() {
     }
 
     setIsBusy(true);
-    setStatus("正在导出结果图...");
 
     try {
+      if (mediaAsset.type === "video") {
+        setStatus("正在导出视频...");
+
+        const result = await exportProjectVideo(project, mediaAsset, mediaUrl, {
+          scale: 1,
+          onProgress: (progress, label) => {
+            if (label) {
+              setStatus(label);
+              return;
+            }
+
+            setStatus(`正在导出视频 ${Math.round(progress * 100)}%...`);
+          }
+        });
+
+        const filename = `${sanitizeFilename(project.name)}.${result.extension}`;
+        downloadBlob(result.blob, filename);
+        setStatus(
+          result.usedFallback
+            ? `MP4 转码失败，已下载 WebM（${result.fallbackReason ?? "未知原因"}）`
+            : "结果视频已下载"
+        );
+        return;
+      }
+
+      setStatus("正在导出结果图...");
+
       const blob = await exportProjectImage(project, mediaAsset, mediaUrl, { format: "png" });
       const filename = `${sanitizeFilename(project.name)}.png`;
       downloadBlob(blob, filename);
@@ -380,22 +409,16 @@ export function App() {
 
       <section className="scroll-section editor-section" data-section="editor">
         <EditorSection
-          frameOpen={frameOpen}
           isBusy={isBusy}
-          editorRailsVisible={showEditorRails}
           mediaAsset={mediaAsset}
           mediaUrl={mediaUrl}
           project={project}
-          status={status}
-          templateListOpen={templateListOpen}
           onNavigate={navigateTo}
           onDownloadResult={() => void handleDownloadResult()}
           onSaveToAlbum={() => void handleSaveToAlbum()}
           onShuffleParams={handleShuffleParams}
           onSelectTemplate={handleSelectTemplate}
           onMagicFrame={(file, options) => void handleMagicFrame(file, options)}
-          onToggleFrame={() => setFrameOpen((value) => !value)}
-          onToggleTemplateList={() => setTemplateListOpen((value) => !value)}
           onUpdateTemplateParams={(params) => {
             if (!project) {
               return;

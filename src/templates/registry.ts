@@ -96,9 +96,10 @@ export const templateRegistry: TemplateDefinition[] = [
       },
       glassFrame: {
         canvasRatio: "auto",
-        edgeWidth: 2,
+        edgeWidth: 3,
         bottomExtra: 1,
         blur: 30,
+        outerRadius: 64,
         textTone: "white"
       }
     }

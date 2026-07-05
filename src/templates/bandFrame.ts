@@ -183,6 +183,17 @@ export function deriveSystemColor(average: Rgb, target: "band" | "backing"): str
   return rgbToHex(hslToRgb(hue, s, l));
 }
 
+/**
+ * 导出时若没有预存 system hex，用平均色派生一个稳定值（不加随机，保证可复现）。
+ */
+export function fallbackSystemColor(average: Rgb, target: "band" | "backing"): string {
+  const { r, g, b } = average;
+  const toHex = (value: number) => Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
+  const mix = (channel: number, towards: number, ratio: number) => channel + (towards - channel) * ratio;
+  const ratio = target === "band" ? 0.82 : 0.55;
+  return `#${toHex(mix(r, 245, ratio))}${toHex(mix(g, 240, ratio))}${toHex(mix(b, 232, ratio))}`;
+}
+
 /** 从 CanvasImageSource 同步取平均色（导出时用） */
 export function sampleAverageColorFromSource(source: CanvasImageSource): Rgb {
   const size = 32;

@@ -1,5 +1,6 @@
 import type { BandFrameConfig, CanvasRatio, TemplateParams } from "../types";
 import {
+  fallbackSystemColor,
   getBandCardRadiusPx,
   getBandTextColors,
   resolveBandColor,
@@ -47,11 +48,11 @@ export function renderBandFrame(
 
   const backingHex = resolveBandColor(
     bandFrame.backingColor,
-    bandFrame.systemBackingHex ?? (average ? fallbackSystem(average, "backing") : undefined)
+    bandFrame.systemBackingHex ?? (average ? fallbackSystemColor(average, "backing") : undefined)
   );
   const bandHex = resolveBandColor(
     bandFrame.bandColor,
-    bandFrame.systemBandHex ?? (average ? fallbackSystem(average, "band") : undefined)
+    bandFrame.systemBandHex ?? (average ? fallbackSystemColor(average, "band") : undefined)
   );
 
   const marginPx = (bandFrame.outerMargin / 100) * width;
@@ -99,13 +100,4 @@ export function renderBandFrame(
   context.restore();
 
   return canvas;
-}
-
-function fallbackSystem(average: { r: number; g: number; b: number }, target: "band" | "backing"): string {
-  // 导出时若没有预存 system hex，用平均色派生一个稳定值（不加随机，保证可复现）。
-  const { r, g, b } = average;
-  const toHex = (value: number) => Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
-  const mix = (channel: number, towards: number, ratio: number) => channel + (towards - channel) * ratio;
-  const ratio = target === "band" ? 0.82 : 0.55;
-  return `#${toHex(mix(r, 245, ratio))}${toHex(mix(g, 240, ratio))}${toHex(mix(b, 232, ratio))}`;
 }

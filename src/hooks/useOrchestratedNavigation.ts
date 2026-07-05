@@ -3,16 +3,9 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 export type AppSection = "hero" | "editor" | "gallery" | "album";
 
 export const SCROLL_MS = 720;
-export const RAIL_MS = 480;
 
 const sections: AppSection[] = ["hero", "editor", "gallery", "album"];
 const innerScrollSelectors = [".gallery-scroll-container", ".album-scroll-container", ".workspace-rail-scroll"];
-
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
 
 function findInnerScrollable(target: EventTarget | null, boundary: Element): HTMLElement | null {
   if (!(target instanceof Element)) {
@@ -39,7 +32,6 @@ function isAtScrollEdge(element: HTMLElement, direction: 1 | -1): boolean {
 
 export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement | null>) {
   const [activeSection, setActiveSection] = useState<AppSection>("hero");
-  const [editorRailsVisible, setEditorRailsVisible] = useState(false);
   const isAnimatingRef = useRef(false);
   const activeSectionRef = useRef<AppSection>("hero");
 
@@ -76,22 +68,6 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
     isAnimatingRef.current = true;
 
     try {
-      if (current === "editor" && target !== "editor") {
-        setEditorRailsVisible(false);
-        await wait(RAIL_MS);
-        await scrollToSectionRaw(target);
-        return;
-      }
-
-      if (target === "editor" && current !== "editor") {
-        setEditorRailsVisible(false);
-        await scrollToSectionRaw("editor");
-        setEditorRailsVisible(true);
-        await wait(RAIL_MS);
-        return;
-      }
-
-      setEditorRailsVisible(false);
       await scrollToSectionRaw(target);
     } finally {
       isAnimatingRef.current = false;
@@ -201,5 +177,5 @@ export function useOrchestratedNavigation(containerRef: RefObject<HTMLDivElement
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [stepSection]);
 
-  return { activeSection, editorRailsVisible, navigateTo };
+  return { activeSection, navigateTo };
 }

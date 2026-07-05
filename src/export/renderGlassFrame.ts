@@ -2,11 +2,15 @@ import type { CanvasRatio, GlassFrameConfig, TemplateParams } from "../types";
 import {
   clampGlassFrame,
   getGlassInnerRadiusPx,
-  getGlassInsets,
+  getGlassInsetsPx,
   getGlassOuterRadiusPx,
+  getGlassPlateInsetPx,
+  getGlassPlateRadiusPx,
   getGlassTextColors,
-  GLASS_FROST_ALPHA
+  GLASS_FROST_ALPHA,
+  resolveGlassBackingColor
 } from "../templates/glassFrame";
+import { fallbackSystemColor, sampleAverageColorFromSource } from "../templates/bandFrame";
 import { cssPx, createCanvas, drawCoverImage, type LoadedMedia } from "./canvasUtils";
 import { getFontStack } from "../templates/fonts";
 import { resolveExportDimensions } from "./sizing";
@@ -28,24 +32,47 @@ function resolveRatioNumber(glassFrame: GlassFrameConfig, media: LoadedMedia): n
   return ratioNumberMap[glassFrame.canvasRatio];
 }
 
-function drawFullFrostPlate(
+function getGlassPlateRect(width: number, height: number, plateInset: number, outerRadius: number) {
+  const plateRadius = getGlassPlateRadiusPx(outerRadius, plateInset);
+
+  return {
+    x: plateInset,
+    y: plateInset,
+    w: width - plateInset * 2,
+    h: height - plateInset * 2,
+    radius: plateRadius
+  };
+}
+
+/** 底层：铺满画布的无圆角矩形（颜色随图像适配） */
+function drawGlassBasePlate(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  backingColor: string
+) {
+  context.fillStyle = backingColor;
+  context.fillRect(0, 0, width, height);
+}
+
+function drawGlassFrostPlate(
   context: CanvasRenderingContext2D,
   source: CanvasImageSource,
   width: number,
   height: number,
-  outerRadius: number,
+  plate: ReturnType<typeof getGlassPlateRect>,
   blurPx: number,
   frostAlpha: number
 ) {
   context.save();
   context.beginPath();
-  context.roundRect(0, 0, width, height, outerRadius);
+  context.roundRect(plate.x, plate.y, plate.w, plate.h, plate.radius);
   context.clip();
   context.filter = `blur(${blurPx}px) saturate(1.04)`;
   drawCoverImage(context, source, 0, 0, width, height, 0.42);
   context.filter = "none";
   context.fillStyle = `rgba(255, 255, 255, ${frostAlpha})`;
-  context.fillRect(0, 0, width, height);
+  context.fillRect(plate.x, plate.y, plate.w, plate.h);
   context.restore();
 }
 
@@ -57,21 +84,36 @@ function drawInsetShadow(
   height: number,
   radius: number
 ) {
+  const edgeDepth = 0.22;
+  const maxAlpha = 0.18;
+
   context.save();
   context.beginPath();
   context.roundRect(x, y, width, height, radius);
   context.clip();
 
-  const topGradient = context.createLinearGradient(0, y, 0, y + height * 0.35);
-  topGradient.addColorStop(0, "rgba(0, 0, 0, 0.34)");
+  const topGradient = context.createLinearGradient(0, y, 0, y + height * edgeDepth);
+  topGradient.addColorStop(0, `rgba(0, 0, 0, ${maxAlpha})`);
   topGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
   context.fillStyle = topGradient;
   context.fillRect(x, y, width, height);
 
-  const leftGradient = context.createLinearGradient(x, 0, x + width * 0.22, 0);
-  leftGradient.addColorStop(0, "rgba(0, 0, 0, 0.18)");
+  const bottomGradient = context.createLinearGradient(0, y + height, 0, y + height * (1 - edgeDepth));
+  bottomGradient.addColorStop(0, `rgba(0, 0, 0, ${maxAlpha})`);
+  bottomGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+  context.fillStyle = bottomGradient;
+  context.fillRect(x, y, width, height);
+
+  const leftGradient = context.createLinearGradient(x, 0, x + width * edgeDepth, 0);
+  leftGradient.addColorStop(0, `rgba(0, 0, 0, ${maxAlpha})`);
   leftGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
   context.fillStyle = leftGradient;
+  context.fillRect(x, y, width, height);
+
+  const rightGradient = context.createLinearGradient(x + width, 0, x + width * (1 - edgeDepth), 0);
+  rightGradient.addColorStop(0, `rgba(0, 0, 0, ${maxAlpha})`);
+  rightGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+  context.fillStyle = rightGradient;
   context.fillRect(x, y, width, height);
 
   context.restore();
@@ -79,22 +121,22 @@ function drawInsetShadow(
 
 function drawOuterGlassBorder(
   context: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  radius: number,
+  plate: ReturnType<typeof getGlassPlateRect>,
   lineWidth: number
 ) {
+  const { x, y, w, h, radius } = plate;
+
   context.save();
   context.strokeStyle = "rgba(255, 255, 255, 0.78)";
   context.lineWidth = lineWidth;
   context.beginPath();
-  context.roundRect(lineWidth / 2, lineWidth / 2, width - lineWidth, height - lineWidth, radius);
+  context.roundRect(x + lineWidth / 2, y + lineWidth / 2, w - lineWidth, h - lineWidth, radius);
   context.stroke();
 
   context.strokeStyle = "rgba(255, 255, 255, 0.22)";
   context.lineWidth = Math.max(1, lineWidth * 0.6);
   context.beginPath();
-  context.roundRect(lineWidth * 1.2, lineWidth * 1.2, width - lineWidth * 2.4, height - lineWidth * 2.4, radius * 0.92);
+  context.roundRect(x + lineWidth * 1.2, y + lineWidth * 1.2, w - lineWidth * 2.4, h - lineWidth * 2.4, radius * 0.92);
   context.stroke();
   context.restore();
 }
@@ -103,7 +145,7 @@ export function renderGlassFrame(
   params: TemplateParams,
   media: LoadedMedia,
   scale: number,
-  format: "png" | "jpeg" = "png"
+  _format: "png" | "jpeg" | "mp4" = "png"
 ): HTMLCanvasElement {
   const glassFrame = params.glassFrame ? clampGlassFrame(params.glassFrame) : undefined;
   if (!glassFrame) {
@@ -113,35 +155,24 @@ export function renderGlassFrame(
   const ratioNumber = resolveRatioNumber(glassFrame, media);
   const { width, height } = resolveExportDimensions(ratioNumber, media, scale);
   const { canvas, context } = createCanvas(width, height);
-  const insets = getGlassInsets(glassFrame);
-  const outerRadius = getGlassOuterRadiusPx(width);
-  const innerRadius = getGlassInnerRadiusPx(glassFrame.edgeWidth, width);
+  const insetsPx = getGlassInsetsPx(glassFrame, width);
+  const outerRadius = getGlassOuterRadiusPx(glassFrame.outerRadius, width);
+  const innerRadius = getGlassInnerRadiusPx(glassFrame.edgeWidth, width, glassFrame.outerRadius);
   const blurPx = cssPx(glassFrame.blur, width);
+  const plateInset = getGlassPlateInsetPx(width);
+  const plate = getGlassPlateRect(width, height, plateInset, outerRadius);
+  const average = glassFrame.backingHex ? null : sampleAverageColorFromSource(media.source);
+  const backingColor = resolveGlassBackingColor(glassFrame.backingHex, average);
 
-  const top = (insets.top / 100) * height;
-  const right = (insets.right / 100) * width;
-  const bottom = (insets.bottom / 100) * height;
-  const left = (insets.left / 100) * width;
-  const innerX = left;
-  const innerY = top;
-  const innerW = width - left - right;
-  const innerH = height - top - bottom;
+  const innerX = insetsPx.left;
+  const innerY = insetsPx.top;
+  const innerW = width - insetsPx.left - insetsPx.right;
+  const innerH = height - insetsPx.top - insetsPx.bottom;
 
   context.clearRect(0, 0, width, height);
-
-  if (format === "jpeg") {
-    // JPEG 无 alpha，整图铺底色，圆角外为底色（无法透明）。
-    context.fillStyle = params.canvas.background;
-    context.fillRect(0, 0, width, height);
-  } else {
-    // PNG：从最外层就把整个画布裁成圆角，圆角外永不被任何绘制触碰，保证透明。
-    context.beginPath();
-    context.roundRect(0, 0, width, height, outerRadius);
-    context.clip();
-  }
-
-  drawFullFrostPlate(context, media.source, width, height, outerRadius, blurPx, GLASS_FROST_ALPHA);
-  drawOuterGlassBorder(context, width, height, outerRadius, Math.max(1, cssPx(2, width)));
+  drawGlassBasePlate(context, width, height, backingColor);
+  drawGlassFrostPlate(context, media.source, width, height, plate, blurPx, GLASS_FROST_ALPHA);
+  drawOuterGlassBorder(context, plate, Math.max(1, cssPx(2, width)));
 
   context.save();
   context.beginPath();

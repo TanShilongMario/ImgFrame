@@ -84,7 +84,10 @@ export type GlassFrameConfig = {
   edgeWidth: number;
   bottomExtra: number;
   blur: number;
+  outerRadius: number;
   textTone: GlassTextTone;
+  /** 由图像平均色派生的底层填充色（导出/预览复用） */
+  backingHex?: string;
 };
 
 export type TemplateParams = {

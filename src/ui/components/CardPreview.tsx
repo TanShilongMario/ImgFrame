@@ -16,16 +16,22 @@ import {
 } from "../../templates/gridFrame";
 import {
   getGlassInnerRadiusPx,
-  getGlassInsets,
+  getGlassInsetsPx,
   getGlassOuterRadiusPx,
+  getGlassPlateInsetPx,
+  getGlassPlateRadiusPx,
   getGlassTextColors,
-  getGlassWindowMediaStyle,
-  GLASS_FROST_ALPHA
+  getGlassWindowMediaStylePx,
+  GLASS_BACKING_COLOR,
+  GLASS_FROST_ALPHA,
+  resolveGlassBackingColor
 } from "../../templates/glassFrame";
 import {
+  fallbackSystemColor,
   getBandCardRadiusPx,
   getBandTextColors,
-  resolveBandColor
+  resolveBandColor,
+  sampleAverageColorFromUrl
 } from "../../templates/bandFrame";
 import { getFontStack } from "../../templates/fonts";
 import { useElementWidth } from "../../hooks/useElementWidth";
@@ -33,7 +39,7 @@ import { useImageAspectRatio } from "../../hooks/useImageAspectRatio";
 import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type CardPreviewProps = {
   params: TemplateParams;
@@ -85,6 +91,7 @@ function resolveCanvasRatio(
 
 type GlassCardPreviewProps = {
   glassFrame: GlassFrameConfig;
+  mediaUrl?: string;
   params: TemplateParams;
   ratio: string;
   ratioNumber: number;
@@ -95,6 +102,7 @@ type GlassCardPreviewProps = {
 
 function GlassCardPreview({
   glassFrame,
+  mediaUrl,
   params,
   ratio,
   ratioNumber,
@@ -105,33 +113,62 @@ function GlassCardPreview({
   const rootRef = useRef<HTMLDivElement>(null);
   const measuredWidth = useElementWidth(rootRef);
   const refWidth = measuredWidth || GLASS_RADIUS_REF_WIDTH;
-  const insets = getGlassInsets(glassFrame);
+  const [sampledBackingHex, setSampledBackingHex] = useState<string | undefined>(glassFrame.backingHex);
+
+  useEffect(() => {
+    setSampledBackingHex(glassFrame.backingHex);
+  }, [glassFrame.backingHex]);
+
+  useEffect(() => {
+    if (glassFrame.backingHex || !mediaUrl) {
+      return;
+    }
+
+    let cancelled = false;
+    void sampleAverageColorFromUrl(mediaUrl)
+      .then((average) => {
+        if (!cancelled) {
+          setSampledBackingHex(fallbackSystemColor(average, "backing"));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSampledBackingHex(GLASS_BACKING_COLOR);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [glassFrame.backingHex, mediaUrl]);
+
+  const backingColor = resolveGlassBackingColor(sampledBackingHex);
+  const refHeight = refWidth / ratioNumber;
+  const insetsPx = getGlassInsetsPx(glassFrame, refWidth);
   const textColors = getGlassTextColors(glassFrame.textTone);
-  const outerRadiusPx = getGlassOuterRadiusPx(refWidth);
-  const innerRadiusPx = getGlassInnerRadiusPx(glassFrame.edgeWidth, refWidth);
-  const windowMediaStyle = getGlassWindowMediaStyle(insets);
+  const outerRadiusPx = getGlassOuterRadiusPx(glassFrame.outerRadius, refWidth);
+  const innerRadiusPx = getGlassInnerRadiusPx(glassFrame.edgeWidth, refWidth, glassFrame.outerRadius);
+  const plateInsetPx = getGlassPlateInsetPx(refWidth);
+  const plateRadiusPx = getGlassPlateRadiusPx(outerRadiusPx, plateInsetPx);
+  const windowMediaStyle = getGlassWindowMediaStylePx(insetsPx, refWidth, refHeight);
   const blurPx = cssPx(glassFrame.blur, refWidth);
   const textInsetX = cssPx(18, refWidth);
   const textInsetY = cssPx(22, refWidth);
-  const outerRadiusStyle = `${outerRadiusPx}px`;
   const stageStyle =
     variant === "stage"
       ? {
           ...getStagePreviewStyle(ratio, ratioNumber),
-          background: params.canvas.background,
-          borderRadius: outerRadiusStyle
+          background: "transparent"
         }
       : variant === "hero"
         ? {
             background: "transparent",
-            borderRadius: outerRadiusStyle,
             height: "100%",
             width: "100%"
         }
         : {
             aspectRatio: ratio,
-            background: variant === "gallery" || variant === "thumb" ? "transparent" : params.canvas.background,
-            borderRadius: outerRadiusStyle
+            background: "transparent"
           };
 
   return (
@@ -140,7 +177,18 @@ function GlassCardPreview({
       className={surface(`card-preview card-preview-${variant} card-preview-glass`)}
       style={stageStyle}
     >
-      <div className="glass-preview-plate">
+      <div
+        aria-hidden="true"
+        className={surface("glass-preview-base")}
+        style={{ background: backingColor }}
+      />
+      <div
+        className={surface("glass-preview-plate")}
+        style={{
+          borderRadius: `${plateRadiusPx}px`,
+          inset: `${plateInsetPx}px`
+        }}
+      >
         <div className="glass-preview-plate-media">{renderMedia(mediaName)}</div>
         <div
           aria-hidden="true"
@@ -151,16 +199,16 @@ function GlassCardPreview({
             background: `rgba(255, 255, 255, ${GLASS_FROST_ALPHA})`
           }}
         />
-        <div aria-hidden="true" className="glass-preview-outer-border" />
+        <div aria-hidden="true" className={surface("glass-preview-outer-border")} />
       </div>
       <div
         className={surface("glass-preview-window")}
         style={{
           borderRadius: `${innerRadiusPx}px`,
-          bottom: `${insets.bottom}%`,
-          left: `${insets.left}%`,
-          right: `${insets.right}%`,
-          top: `${insets.top}%`
+          bottom: `${insetsPx.bottom}px`,
+          left: `${insetsPx.left}px`,
+          right: `${insetsPx.right}px`,
+          top: `${insetsPx.top}px`
         }}
       >
         <div className={surface("glass-preview-window-media")} style={windowMediaStyle}>
@@ -538,6 +586,7 @@ export function CardPreview({
       <GlassCardPreview
         glassFrame={glassFrame}
         mediaName={mediaName}
+        mediaUrl={mediaUrl}
         params={params}
         ratio={ratio}
         ratioNumber={ratioNumber}

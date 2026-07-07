@@ -9,6 +9,7 @@ import type {
   MediaAsset,
   Project,
   RefinedFrameConfig,
+  SwatchFrameConfig,
   TemplateParams
 } from "../types";
 import { clampGlassFrame } from "../templates/glassFrame";
@@ -18,6 +19,7 @@ import {
   deriveGlassSillCausticColor
 } from "../templates/glassSillFrame";
 import { clampFlutedFrame } from "../templates/flutedFrame";
+import { clampSwatchFrame } from "../templates/swatchFrame";
 import { clampGridFrame, withDerivedGridEffects } from "../templates/gridFrame";
 import { clampBandFrame, deriveSystemColor, fallbackSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
 import { normalizeTextFont, type TextFontId } from "../templates/fonts";
@@ -28,6 +30,7 @@ import { StageActionButton } from "./components/StageActionButton";
 import { Sidebar } from "./components/Sidebar";
 import { Field } from "./inspector/controls";
 import { FlutedFrameControls } from "./inspector/FlutedFrameControls";
+import { SwatchFrameControls } from "./inspector/SwatchFrameControls";
 import { BandFrameControls } from "./inspector/BandFrameControls";
 import { GlassFrameControls } from "./inspector/GlassFrameControls";
 import { GlassSillFrameControls } from "./inspector/GlassSillFrameControls";
@@ -80,6 +83,7 @@ export function EditorSection({
     activeTemplate?.family === "glass-sill-frame" ? project?.templateParams.glassSillFrame : undefined;
   const bandFrame = activeTemplate?.family === "band-frame" ? project?.templateParams.bandFrame : undefined;
   const flutedFrame = activeTemplate?.family === "fluted-frame" ? project?.templateParams.flutedFrame : undefined;
+  const swatchFrame = activeTemplate?.family === "swatch-frame" ? project?.templateParams.swatchFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
   const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
   const lastGlassSillSampleRef = useRef<{ mediaId?: string; backingHex?: string; causticHex?: string }>({});
@@ -313,6 +317,25 @@ export function EditorSection({
       ...project.templateParams,
       flutedFrame: clampFlutedFrame(nextFrame)
     });
+  }
+
+  function updateSwatchFrame(nextFrame: SwatchFrameConfig) {
+    if (!project) {
+      return;
+    }
+
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      swatchFrame: clampSwatchFrame(nextFrame)
+    });
+  }
+
+  function updateSwatchSeed(seed: number) {
+    if (!swatchFrame) {
+      return;
+    }
+
+    updateSwatchFrame({ ...swatchFrame, seed });
   }
 
   function updateTextField(field: "title" | "subtitle" | "credit", value: string, maxLength: number) {
@@ -551,6 +574,12 @@ export function EditorSection({
               />
             ) : flutedFrame ? (
               <FlutedFrameControls frame={flutedFrame} onChangeFrame={updateFlutedFrame} />
+            ) : swatchFrame ? (
+              <SwatchFrameControls
+                frame={swatchFrame}
+                onChangeFrame={updateSwatchFrame}
+                onChangeSeed={updateSwatchSeed}
+              />
             ) : (
           <>
             <Field label="Ratio" value={project?.templateParams.canvas.ratio ?? "-"} />
@@ -633,6 +662,8 @@ export function EditorSection({
                 onChangeRefinedFrame={updateRefinedFrame}
                 onChangeTextField={updateTextField}
                 onChangeFlutedFrame={updateFlutedFrame}
+                onChangeSwatchFrame={updateSwatchFrame}
+                onChangeSwatchSeed={updateSwatchSeed}
               />
             </div>
           ) : null}

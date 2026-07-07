@@ -116,6 +116,20 @@ export type FlutedFrameConfig = {
   borderWidth: number;
 };
 
+export type SwatchFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  /** 中央图距边缘的间距（%，越大中央图越小） */
+  windowMargin: number;
+  /** 中央图圆角 */
+  innerRadius: number;
+  /** 中央图浅白描边宽度 */
+  borderWidth: number;
+  /** 背景色条等分数（3–6） */
+  segmentCount: number;
+  /** 随机取色种子 */
+  seed: number;
+};
+
 export type TemplateParams = {
   canvas: {
     ratio: CanvasRatio;
@@ -142,6 +156,7 @@ export type TemplateParams = {
   glassSillFrame?: GlassSillFrameConfig;
   bandFrame?: BandFrameConfig;
   flutedFrame?: FlutedFrameConfig;
+  swatchFrame?: SwatchFrameConfig;
 };
 
 export type Project = {

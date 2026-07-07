@@ -95,7 +95,7 @@ export function HeroUploadCard({
 
   return (
     <div
-      className={`hero-upload-card${variant === "inline" ? " hero-upload-card-inline" : ""}${isDragOver ? " is-drag-over" : ""}${isCeremony ? " is-ceremony" : ""} is-phase-${ceremonyPhase}`}
+      className={`hero-upload-card${variant === "inline" ? " hero-upload-card-inline" : ""}${!hasSelectedMedia && !isCeremony ? " is-empty" : ""}${isDragOver ? " is-drag-over" : ""}${isCeremony ? " is-ceremony" : ""} is-phase-${ceremonyPhase}`}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDropInternal}

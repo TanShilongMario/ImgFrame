@@ -2,6 +2,7 @@ import type {
   BandFrameConfig,
   CanvasRatio,
   FlutedFrameConfig,
+  SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
   GridFrameConfig,
@@ -55,8 +56,10 @@ import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
 import { renderFlutedFrame } from "../../export/renderFlutedFrame";
+import { renderSwatchFrame } from "../../export/renderSwatchFrame";
 import { resolveExportDimensions } from "../../export/sizing";
 import { clampFlutedFrame, resolveFlutedRatioNumber } from "../../templates/flutedFrame";
+import { clampSwatchFrame, resolveSwatchRatioNumber } from "../../templates/swatchFrame";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type CardPreviewProps = {
@@ -89,6 +92,8 @@ const ratioNumberMap: Record<CanvasRatio, number> = {
 };
 
 const GLASS_RADIUS_REF_WIDTH = 720;
+const HERO_PREVIEW_RATIO = "3 / 4";
+const HERO_PREVIEW_RATIO_NUMBER = 3 / 4;
 
 /** 各模板共用的画布比例解析：auto 时跟随原图，否则查表。 */
 function resolveCanvasRatio(
@@ -798,7 +803,7 @@ function FlutedCardPreview({
       }
 
       const media = { source, width, height };
-      const ratioNumberResolved = resolveFlutedRatioNumber(frame, width, height);
+      const ratioNumberResolved = variant === "hero" ? ratioNumber : resolveFlutedRatioNumber(frame, width, height);
       const base = resolveExportDimensions(ratioNumberResolved, media, 1);
       const scale = refWidth / base.width;
       const rendered = renderFlutedFrame({ ...params, flutedFrame: frame }, media, scale);
@@ -856,6 +861,143 @@ function FlutedCardPreview({
   );
 }
 
+type SwatchCardPreviewProps = {
+  swatchFrame: SwatchFrameConfig;
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+};
+
+function SwatchCardPreview({
+  swatchFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant
+}: SwatchCardPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || 360;
+  const frame = clampSwatchFrame(swatchFrame);
+
+  useEffect(() => {
+    if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
+      return;
+    }
+
+    let cancelled = false;
+    let video: HTMLVideoElement | undefined;
+
+    async function renderPreview() {
+      const sourceUrl = mediaUrl;
+      if (!sourceUrl) {
+        return;
+      }
+
+      let source: CanvasImageSource;
+      let width: number;
+      let height: number;
+
+      if (mediaType === "video") {
+        video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.src = sourceUrl;
+
+        await new Promise<void>((resolve, reject) => {
+          video!.onloadeddata = () => resolve();
+          video!.onerror = () => reject(new Error("无法加载视频预览。"));
+        });
+
+        video.currentTime = 0;
+        await new Promise<void>((resolve) => {
+          video!.onseeked = () => resolve();
+        });
+
+        source = video;
+        width = video.videoWidth;
+        height = video.videoHeight;
+      } else {
+        const image = new Image();
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error("无法加载图片预览。"));
+          image.src = sourceUrl;
+        });
+        source = image;
+        width = image.naturalWidth;
+        height = image.naturalHeight;
+      }
+
+      if (cancelled || !canvasRef.current) {
+        return;
+      }
+
+      const media = { source, width, height };
+      const ratioNumberResolved = variant === "hero" ? ratioNumber : resolveSwatchRatioNumber(frame, width, height);
+      const base = resolveExportDimensions(ratioNumberResolved, media, 1);
+      const scale = refWidth / base.width;
+      const rendered = renderSwatchFrame({ ...params, swatchFrame: frame }, media, scale);
+      const canvas = canvasRef.current;
+      canvas.width = rendered.width;
+      canvas.height = rendered.height;
+      const context = canvas.getContext("2d");
+      context?.clearRect(0, 0, canvas.width, canvas.height);
+      context?.drawImage(rendered, 0, 0);
+    }
+
+    void renderPreview().catch((error) => {
+      console.error("色谱预览渲染失败:", error);
+      if (!cancelled && canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
+        context?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
+    };
+  }, [swatchFrame, mediaType, mediaUrl, params, refWidth]);
+
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(ratio, ratioNumber),
+          background: "transparent"
+        }
+      : variant === "hero"
+        ? {
+            background: "transparent",
+            height: "100%",
+            width: "100%"
+          }
+        : {
+            aspectRatio: ratio,
+            background: "transparent"
+          };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-swatch`)}
+      style={stageStyle}
+    >
+      <canvas className="swatch-preview-canvas" ref={canvasRef} />
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -873,6 +1015,7 @@ export function CardPreview({
   const glassSillFrame = template?.family === "glass-sill-frame" ? params.glassSillFrame : undefined;
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
   const flutedFrame = template?.family === "fluted-frame" ? params.flutedFrame : undefined;
+  const swatchFrame = template?.family === "swatch-frame" ? params.swatchFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl);
   const frameCanvasRatio =
     refinedFrame?.canvasRatio ??
@@ -880,8 +1023,12 @@ export function CardPreview({
     glassFrame?.canvasRatio ??
     glassSillFrame?.canvasRatio ??
     bandFrame?.canvasRatio ??
-    flutedFrame?.canvasRatio;
-  const { ratio, ratioNumber } = resolveCanvasRatio(frameCanvasRatio, imageRatio ?? undefined, params.canvas.ratio);
+    flutedFrame?.canvasRatio ??
+    swatchFrame?.canvasRatio;
+  const { ratio, ratioNumber } =
+    variant === "hero"
+      ? { ratio: HERO_PREVIEW_RATIO, ratioNumber: HERO_PREVIEW_RATIO_NUMBER }
+      : resolveCanvasRatio(frameCanvasRatio, imageRatio ?? undefined, params.canvas.ratio);
 
   function renderMedia(alt: string) {
     if (mediaUrl && mediaType === "image") {
@@ -963,6 +1110,20 @@ export function CardPreview({
     return (
       <FlutedCardPreview
         flutedFrame={flutedFrame}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        variant={variant}
+      />
+    );
+  }
+
+  if (framed && swatchFrame) {
+    return (
+      <SwatchCardPreview
+        swatchFrame={swatchFrame}
         mediaType={mediaType}
         mediaUrl={mediaUrl}
         params={params}

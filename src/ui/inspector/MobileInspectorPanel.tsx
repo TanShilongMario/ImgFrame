@@ -5,6 +5,7 @@ import type { TextFontId } from "../../templates/fonts";
 import {
   buildBandMobileTabs,
   buildFlutedMobileTabs,
+  buildSwatchMobileTabs,
   buildGlassMobileTabs,
   buildGlassSillMobileTabs,
   buildGridMobileTabs,
@@ -14,6 +15,7 @@ import { MobileTabbedInspector } from "./MobileTabbedInspector";
 import type {
   BandFrameConfig,
   FlutedFrameConfig,
+  SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
   GridFrameConfig,
@@ -30,6 +32,8 @@ type MobileInspectorPanelProps = {
   onChangeGlassSillFrame: (frame: GlassSillFrameConfig) => void;
   onChangeBandFrame: (frame: BandFrameConfig) => void;
   onChangeFlutedFrame: (frame: FlutedFrameConfig) => void;
+  onChangeSwatchFrame: (frame: SwatchFrameConfig) => void;
+  onChangeSwatchSeed: (seed: number) => void;
   onChangeTextField: (field: "title" | "subtitle" | "credit", value: string, maxLength: number) => void;
   onChangeFont: (font: TextFontId) => void;
   onApplyGlassSystemBacking: () => void;
@@ -47,6 +51,8 @@ export function MobileInspectorPanel({
   onChangeGlassSillFrame,
   onChangeBandFrame,
   onChangeFlutedFrame,
+  onChangeSwatchFrame,
+  onChangeSwatchSeed,
   onChangeTextField,
   onChangeFont,
   onApplyGlassSystemBacking,
@@ -62,6 +68,7 @@ export function MobileInspectorPanel({
     activeTemplate.family === "glass-sill-frame" ? project.templateParams.glassSillFrame : undefined;
   const bandFrame = activeTemplate.family === "band-frame" ? project.templateParams.bandFrame : undefined;
   const flutedFrame = activeTemplate.family === "fluted-frame" ? project.templateParams.flutedFrame : undefined;
+  const swatchFrame = activeTemplate.family === "swatch-frame" ? project.templateParams.swatchFrame : undefined;
 
   const tabs = useMemo(() => {
     if (refinedFrame) {
@@ -132,11 +139,20 @@ export function MobileInspectorPanel({
       });
     }
 
+    if (swatchFrame) {
+      return buildSwatchMobileTabs({
+        frame: swatchFrame,
+        onChangeFrame: onChangeSwatchFrame,
+        onChangeSeed: onChangeSwatchSeed
+      });
+    }
+
     return [];
   }, [
     activeFont,
     bandFrame,
     flutedFrame,
+    swatchFrame,
     glassFrame,
     glassSillFrame,
     gridFrame,
@@ -145,6 +161,8 @@ export function MobileInspectorPanel({
     onApplyGlassSystemBacking,
     onChangeBandFrame,
     onChangeFlutedFrame,
+    onChangeSwatchFrame,
+    onChangeSwatchSeed,
     onChangeFont,
     onChangeGlassFrame,
     onChangeGlassSillFrame,

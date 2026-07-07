@@ -1,10 +1,9 @@
-import type { CSSProperties, MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import type { TemplateParams } from "../../types";
 import { HeroTemplateCard } from "./HeroTemplateCard";
 
 type HeroShowcaseProps = {
   rawImageSrc: string;
-  heroAssetRatio: number;
   templateId: string;
   params: TemplateParams;
   onSwapRawImage: () => void;
@@ -16,7 +15,6 @@ type HeroShowcaseProps = {
 
 export function HeroShowcase({
   rawImageSrc,
-  heroAssetRatio,
   templateId,
   params,
   onSwapRawImage,
@@ -32,7 +30,6 @@ export function HeroShowcase({
         onClick={onSwapRawImage}
         onMouseEnter={onRawEnter}
         onMouseLeave={onRawLeave}
-        style={{ "--hero-raw-ratio": String(heroAssetRatio) } as CSSProperties}
       >
         <img alt="原始素材" src={rawImageSrc} />
       </figure>

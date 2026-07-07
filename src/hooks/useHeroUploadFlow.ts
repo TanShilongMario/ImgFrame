@@ -1,4 +1,4 @@
-import { useEffect, useState, type DragEvent, type MouseEvent } from "react";
+import { useState, type DragEvent, type MouseEvent } from "react";
 import { pickHeroImage } from "../media/heroImages";
 import { randomizeTemplatePick, randomizeWithinTemplate } from "../templates/randomize";
 import type { HeroUploadOptions } from "../ui/HeroPage";
@@ -12,7 +12,6 @@ type UseHeroUploadFlowOptions = {
 export function useHeroUploadFlow({ isBusy, onMagicFrame }: UseHeroUploadFlowOptions) {
   const [rawImageSrc, setRawImageSrc] = useState(() => pickHeroImage());
   const [heroPreview, setHeroPreview] = useState(() => randomizeTemplatePick());
-  const [heroAssetRatio, setHeroAssetRatio] = useState(0.75);
   const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
 
   const cardFlow = useUploadCardFlow({
@@ -20,20 +19,6 @@ export function useHeroUploadFlow({ isBusy, onMagicFrame }: UseHeroUploadFlowOpt
     onMagicFrame,
     onAfterMagicFrame: () => setUploadPanelOpen(false)
   });
-
-  useEffect(() => {
-    if (!rawImageSrc) {
-      return;
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        setHeroAssetRatio(img.naturalWidth / img.naturalHeight);
-      }
-    };
-    img.src = rawImageSrc;
-  }, [rawImageSrc]);
 
   function handleSwapRawImage() {
     setRawImageSrc((current) => pickHeroImage(current));
@@ -117,7 +102,6 @@ export function useHeroUploadFlow({ isBusy, onMagicFrame }: UseHeroUploadFlowOpt
   return {
     rawImageSrc,
     heroPreview,
-    heroAssetRatio,
     uploadPanelOpen,
     previewUrl: cardFlow.previewUrl,
     isPreviewLoading: cardFlow.isPreviewLoading,

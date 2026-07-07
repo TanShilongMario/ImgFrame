@@ -1,5 +1,6 @@
-import type { BandColorChoice, BandFrameConfig, CanvasRatio, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, TemplateParams } from "../types";
+import type { BandColorChoice, BandFrameConfig, CanvasRatio, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, SwatchFrameConfig, TemplateParams } from "../types";
 import { clampFlutedFrame } from "./flutedFrame";
+import { clampSwatchFrame } from "./swatchFrame";
 import { getTemplateById, templateRegistry, type TemplateDefinition } from "./registry";
 import { clampGlassFrame } from "./glassFrame";
 import { clampGlassSillFrame } from "./glassSillFrame";
@@ -58,6 +59,20 @@ function cloneParams(params: TemplateParams): TemplateParams {
 }
 
 export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
+  if (base.swatchFrame) {
+    return {
+      ...cloneParams(base),
+      swatchFrame: clampSwatchFrame({
+        ...base.swatchFrame,
+        windowMargin: range(12, 22),
+        innerRadius: range(12, 32),
+        borderWidth: range(3, 6),
+        segmentCount: range(3, 6),
+        seed: Math.floor(Math.random() * 100000)
+      })
+    };
+  }
+
   if (base.flutedFrame) {
     return {
       ...cloneParams(base),
@@ -250,6 +265,14 @@ export function normalizeFlutedFrame(frame?: FlutedFrameConfig): FlutedFrameConf
   }
 
   return clampFlutedFrame(frame);
+}
+
+export function normalizeSwatchFrame(frame?: SwatchFrameConfig): SwatchFrameConfig | undefined {
+  if (!frame) {
+    return undefined;
+  }
+
+  return clampSwatchFrame(frame);
 }
 
 export function normalizeGlassFrame(frame?: GlassFrameConfig): GlassFrameConfig | undefined {

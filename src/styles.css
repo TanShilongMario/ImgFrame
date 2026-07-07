@@ -808,7 +808,9 @@ button {
 .stage-empty-upload {
   align-items: center;
   display: flex;
+  height: 100%;
   justify-content: center;
+  min-height: 0;
   width: 100%;
 }
 
@@ -816,9 +818,15 @@ button {
   box-shadow:
     0 24px 64px rgba(24, 24, 24, 0.14),
     0 6px 20px rgba(24, 24, 24, 0.06);
+  flex-shrink: 0;
   height: min(560px, 52vh);
   max-height: min(640px, 52vh);
   width: min(360px, 72%);
+}
+
+.hero-upload-card.is-empty .hero-upload-frame {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .stage-actions {
@@ -1613,7 +1621,7 @@ label.stage-action {
 }
 
 .hero-page {
-  --hero-asset-ratio: 0.75;
+  --hero-asset-ratio: 3 / 4;
   --hero-page-pad: clamp(32px, 5vw, 72px);
   --hero-scroll-reserve: 64px;
   --hero-showcase-height: min(
@@ -1664,11 +1672,11 @@ label.stage-action {
   aspect-ratio: var(--hero-asset-ratio);
   flex: 0 0 auto;
   margin: 0;
+  overflow: hidden;
   width: min(240px, 19vw);
 }
 
 .hero-raw img {
-  aspect-ratio: var(--hero-asset-ratio);
   box-shadow: 0 18px 48px rgba(24, 24, 24, 0.12);
   display: block;
   height: 100%;
@@ -1683,6 +1691,8 @@ label.stage-action {
   border-radius: 0;
   flex: 0 1 auto;
   height: 100%;
+  max-height: 100%;
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
   position: relative;
@@ -1691,7 +1701,26 @@ label.stage-action {
 
 .hero-template-card .card-preview-hero {
   height: 100%;
+  max-height: 100%;
+  max-width: 100%;
   padding: 0;
+  width: 100%;
+}
+
+.hero-template-card .card-preview-fluted,
+.hero-template-card .card-preview-swatch {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-template-card .fluted-preview-canvas,
+.hero-template-card .swatch-preview-canvas {
+  display: block;
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
   width: 100%;
 }
 
@@ -3723,11 +3752,18 @@ html[data-layout="mobile"] body {
 
 .mobile-stage .stage-main > .card-preview,
 .mobile-stage .stage-main > .stage-empty-upload {
+  height: 100%;
   max-height: 100%;
 }
 
+.mobile-stage .stage-empty-upload {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
 .mobile-stage .hero-upload-card-inline {
-  height: min(100%, 72dvh);
+  height: min(560px, 68dvh);
   max-height: 100%;
   width: min(360px, 100%);
 }
@@ -3803,7 +3839,7 @@ html[data-layout="mobile"] body {
 }
 
 .mobile-workspace.is-panel-open .hero-upload-card-inline {
-  height: min(100%, 58dvh);
+  height: min(520px, 56dvh);
 }
 
 .mobile-dock {
@@ -3983,17 +4019,20 @@ html[data-layout="mobile"] .app-toast {
   bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
-.stage-main > .card-preview.card-preview-fluted {
+.stage-main > .card-preview.card-preview-fluted,
+.stage-main > .card-preview.card-preview-swatch {
   max-height: none;
 }
 
-.fluted-preview-canvas {
+.fluted-preview-canvas,
+.swatch-preview-canvas {
   display: block;
   height: 100%;
   width: 100%;
 }
 
-.card-preview-fluted {
+.card-preview-fluted,
+.card-preview-swatch {
   overflow: hidden;
 }
 

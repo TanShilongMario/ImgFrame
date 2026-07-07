@@ -2,6 +2,7 @@ import { Dices } from "lucide-react";
 import type {
   BandFrameConfig,
   FlutedFrameConfig,
+  SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
   GridFrameConfig,
@@ -9,6 +10,7 @@ import type {
 } from "../../types";
 import { BAND_FRAME_LIMITS } from "../../templates/bandFrame";
 import { FLUTED_FRAME_LIMITS } from "../../templates/flutedFrame";
+import { SWATCH_FRAME_LIMITS } from "../../templates/swatchFrame";
 import { GLASS_FRAME_LIMITS } from "../../templates/glassFrame";
 import { GLASS_SILL_FRAME_LIMITS } from "../../templates/glassSillFrame";
 import { GRID_LINE_LIMITS } from "../../templates/gridFrame";
@@ -704,6 +706,105 @@ export function buildFlutedMobileTabs({
           value={frame.borderWidth}
           onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
         />
+      )
+    }
+  ];
+}
+
+export function buildSwatchMobileTabs({
+  frame,
+  onChangeFrame,
+  onChangeSeed
+}: {
+  frame: SwatchFrameConfig;
+  onChangeFrame: (frame: SwatchFrameConfig) => void;
+  onChangeSeed: (seed: number) => void;
+}): MobileInspectorTab[] {
+  return [
+    {
+      id: "ratio",
+      label: "比例",
+      content: <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} />
+    },
+    {
+      id: "margin",
+      label: "边距",
+      content: (
+        <RangeControl
+          label="边缘间距"
+          max={SWATCH_FRAME_LIMITS.windowMargin.max}
+          min={SWATCH_FRAME_LIMITS.windowMargin.min}
+          step={1}
+          suffix="%"
+          value={frame.windowMargin}
+          onChange={(value) => onChangeFrame({ ...frame, windowMargin: value })}
+        />
+      )
+    },
+    {
+      id: "inner-radius",
+      label: "圆角",
+      content: (
+        <RangeControl
+          label="中央圆角"
+          max={SWATCH_FRAME_LIMITS.innerRadius.max}
+          min={SWATCH_FRAME_LIMITS.innerRadius.min}
+          step={2}
+          suffix="px"
+          value={frame.innerRadius}
+          onChange={(value) => onChangeFrame({ ...frame, innerRadius: value })}
+        />
+      )
+    },
+    {
+      id: "border",
+      label: "描边",
+      content: (
+        <RangeControl
+          label="描边宽度"
+          max={SWATCH_FRAME_LIMITS.borderWidth.max}
+          min={SWATCH_FRAME_LIMITS.borderWidth.min}
+          step={1}
+          suffix="px"
+          value={frame.borderWidth}
+          onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
+        />
+      )
+    },
+    {
+      id: "segments",
+      label: "等分",
+      content: (
+        <RangeControl
+          label="色条等分"
+          max={SWATCH_FRAME_LIMITS.segmentCount.max}
+          min={SWATCH_FRAME_LIMITS.segmentCount.min}
+          step={1}
+          suffix="格"
+          value={frame.segmentCount}
+          onChange={(value) => onChangeFrame({ ...frame, segmentCount: value })}
+        />
+      )
+    },
+    {
+      id: "seed",
+      label: "随机",
+      content: (
+        <div className="field field-control seed-control">
+          <span>随机取色</span>
+          <div className="seed-value-row">
+            <strong>{frame.seed}</strong>
+            <button
+              aria-label="重掷随机取色"
+              className="seed-dice"
+              title="重掷随机取色"
+              type="button"
+              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
+            >
+              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
       )
     }
   ];

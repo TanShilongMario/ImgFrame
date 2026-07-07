@@ -5,6 +5,7 @@ import { renderBandFrame } from "./renderBandFrame";
 import { renderGlassFrame } from "./renderGlassFrame";
 import { renderGridFrame } from "./renderGridFrame";
 import { renderFlutedFrame } from "./renderFlutedFrame";
+import { renderSwatchFrame } from "./renderSwatchFrame";
 import { renderGlassSillFrame } from "./renderGlassSillFrame";
 import { renderRefinedBlurFrame } from "./renderRefinedBlurFrame";
 import { renderStandardFrame } from "./renderStandardFrame";
@@ -41,6 +42,10 @@ export function renderProjectFrame(
 
   if (template.family === "fluted-frame") {
     return renderFlutedFrame(project.templateParams, media, scale);
+  }
+
+  if (template.family === "swatch-frame") {
+    return renderSwatchFrame(project.templateParams, media, scale);
   }
 
   return renderStandardFrame(project.templateParams, media, scale);

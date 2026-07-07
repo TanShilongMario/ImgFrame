@@ -45,7 +45,6 @@ export function HeroPage({ isBusy, onMagicFrame, onScrollDown }: HeroPageProps) 
       </div>
 
       <HeroShowcase
-        heroAssetRatio={flow.heroAssetRatio}
         params={flow.heroPreview.params}
         rawImageSrc={flow.rawImageSrc}
         templateId={flow.heroPreview.templateId}

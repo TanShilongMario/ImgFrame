@@ -168,6 +168,35 @@ export const templateRegistry: TemplateDefinition[] = [
         backingColor: "sand"
       }
     }
+  },
+  {
+    id: "fluted-rib",
+    name: "长虹",
+    family: "fluted-frame",
+    baseParams: {
+      ...defaultTemplateParams,
+      canvas: { ratio: "3:4", background: "#e8e8e5", padding: 0 },
+      media: {
+        radius: 0,
+        borderWidth: 0,
+        borderColor: "#ffffff",
+        shadow: { blur: 0, offsetX: 0, offsetY: 0, opacity: 0 },
+        crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+      },
+      text: {
+        title: "",
+        subtitle: "",
+        credit: "长虹",
+        titleColor: "#ffffff",
+        fontFamily: "sans"
+      },
+      flutedFrame: {
+        canvasRatio: "auto",
+        windowMargin: 16,
+        innerRadius: 20,
+        borderWidth: 4
+      }
+    }
   }
 ];
 

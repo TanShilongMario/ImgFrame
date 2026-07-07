@@ -26,6 +26,7 @@ export function StageActionButton(props: StageActionButtonProps) {
     return (
       <label
         aria-disabled={props.disabled}
+        aria-label={props.title ?? props.label}
         className={`${className}${props.disabled ? " is-disabled" : ""}`}
         title={props.title}
       >
@@ -37,7 +38,7 @@ export function StageActionButton(props: StageActionButtonProps) {
           onChange={(event) => props.onUpload(event.target.files?.[0])}
         />
         <StageActionIcon kind="upload" />
-        <span>{props.label}</span>
+        <span className="stage-action-label">{props.label}</span>
       </label>
     );
   }
@@ -52,7 +53,7 @@ export function StageActionButton(props: StageActionButtonProps) {
       onClick={props.onClick}
     >
       <StageActionIcon kind={props.kind} />
-      <span>{props.label}</span>
+      <span className="stage-action-label">{props.label}</span>
     </button>
   );
 }

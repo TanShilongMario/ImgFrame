@@ -106,6 +106,16 @@ export type GlassSillFrameConfig = {
   backingHex?: string;
 };
 
+export type FlutedFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  /** 中央图距边缘的间距（%，越大中央图越小） */
+  windowMargin: number;
+  /** 中央图圆角 */
+  innerRadius: number;
+  /** 中央图浅白描边宽度 */
+  borderWidth: number;
+};
+
 export type TemplateParams = {
   canvas: {
     ratio: CanvasRatio;
@@ -131,6 +141,7 @@ export type TemplateParams = {
   glassFrame?: GlassFrameConfig;
   glassSillFrame?: GlassSillFrameConfig;
   bandFrame?: BandFrameConfig;
+  flutedFrame?: FlutedFrameConfig;
 };
 
 export type Project = {

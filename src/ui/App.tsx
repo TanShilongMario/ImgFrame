@@ -22,16 +22,28 @@ import { downloadBlob, sanitizeFilename } from "../export/canvasUtils";
 import { exportProjectImage } from "../export/exportProjectImage";
 import { exportProjectVideo } from "../export/exportProjectVideo";
 import { preloadFfmpeg } from "../export/transcodeToMp4";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { AlbumSection } from "./AlbumSection";
 import { EditorSection } from "./EditorSection";
 import { GallerySection } from "./GallerySection";
 import { HeroPage, type HeroUploadOptions } from "./HeroPage";
+import { MobileApp } from "./MobileApp";
 import { SiteHeader } from "./components/SiteHeader";
 
 /** 高频/初始状态不弹 toast，避免拖动滑杆时提示不断闪现 */
 const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存"]);
 
 export function App() {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileApp />;
+  }
+
+  return <DesktopApp />;
+}
+
+function DesktopApp() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { activeSection, navigateTo } = useOrchestratedNavigation(scrollRef);
   useAppTheme();

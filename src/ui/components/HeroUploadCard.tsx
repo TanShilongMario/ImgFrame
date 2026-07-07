@@ -11,6 +11,7 @@ type HeroUploadCardProps = {
   ceremonyLabel: string;
   isDragOver: boolean;
   isBusy: boolean;
+  imageOnly?: boolean;
   variant?: "modal" | "inline";
   onDragEnter: () => void;
   onDragLeave: () => void;
@@ -19,7 +20,11 @@ type HeroUploadCardProps = {
   onMagicFrame: () => void;
 };
 
-function isMediaFile(file: File): boolean {
+function isMediaFile(file: File, imageOnly: boolean): boolean {
+  if (imageOnly) {
+    return file.type.startsWith("image/");
+  }
+
   return isUploadableMediaFile(file);
 }
 
@@ -30,6 +35,7 @@ export function HeroUploadCard({
   ceremonyLabel,
   isDragOver,
   isBusy,
+  imageOnly = false,
   variant = "modal",
   onDragEnter,
   onDragLeave,
@@ -76,13 +82,16 @@ export function HeroUploadCard({
   function handleDropInternal(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
-    if (file && isMediaFile(file)) {
+    if (file && isMediaFile(file, imageOnly)) {
       onFileSelect(file);
       return;
     }
 
     onDrop(event);
   }
+
+  const mediaAccept = imageOnly ? "image/*" : "image/*,video/*";
+  const uploadLabel = imageOnly ? "上传图片" : "Upload photo or video";
 
   return (
     <div
@@ -121,19 +130,19 @@ export function HeroUploadCard({
       <div className="hero-upload-actions">
         {!hasSelectedMedia ? (
           <>
-            <input ref={fileInputRef} accept="image/*,video/*" hidden type="file" onChange={handleInputChange} />
+            <input ref={fileInputRef} accept={mediaAccept} hidden type="file" onChange={handleInputChange} />
             <button
               className="hero-upload-action hero-upload-action-primary"
               disabled={isBusy}
               type="button"
               onClick={() => openFilePicker("upload")}
             >
-              Upload photo or video
+              {uploadLabel}
             </button>
           </>
         ) : (
           <>
-            <input ref={changeInputRef} accept="image/*,video/*" hidden type="file" onChange={handleInputChange} />
+            <input ref={changeInputRef} accept={mediaAccept} hidden type="file" onChange={handleInputChange} />
             <button
               className="hero-upload-action hero-upload-action-secondary"
               disabled={isBusy || isCeremony || isPreviewLoading}

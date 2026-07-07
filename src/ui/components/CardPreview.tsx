@@ -1,6 +1,7 @@
 import type {
   BandFrameConfig,
   CanvasRatio,
+  FlutedFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
   GridFrameConfig,
@@ -53,6 +54,9 @@ import { useImageAspectRatio } from "../../hooks/useImageAspectRatio";
 import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
+import { renderFlutedFrame } from "../../export/renderFlutedFrame";
+import { resolveExportDimensions } from "../../export/sizing";
+import { clampFlutedFrame, resolveFlutedRatioNumber } from "../../templates/flutedFrame";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type CardPreviewProps = {
@@ -715,6 +719,143 @@ function GridCardPreview({
   );
 }
 
+type FlutedCardPreviewProps = {
+  flutedFrame: FlutedFrameConfig;
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+};
+
+function FlutedCardPreview({
+  flutedFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant
+}: FlutedCardPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || 360;
+  const frame = clampFlutedFrame(flutedFrame);
+
+  useEffect(() => {
+    if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
+      return;
+    }
+
+    let cancelled = false;
+    let video: HTMLVideoElement | undefined;
+
+    async function renderPreview() {
+      const sourceUrl = mediaUrl;
+      if (!sourceUrl) {
+        return;
+      }
+
+      let source: CanvasImageSource;
+      let width: number;
+      let height: number;
+
+      if (mediaType === "video") {
+        video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.src = sourceUrl;
+
+        await new Promise<void>((resolve, reject) => {
+          video!.onloadeddata = () => resolve();
+          video!.onerror = () => reject(new Error("无法加载视频预览。"));
+        });
+
+        video.currentTime = 0;
+        await new Promise<void>((resolve) => {
+          video!.onseeked = () => resolve();
+        });
+
+        source = video;
+        width = video.videoWidth;
+        height = video.videoHeight;
+      } else {
+        const image = new Image();
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error("无法加载图片预览。"));
+          image.src = sourceUrl;
+        });
+        source = image;
+        width = image.naturalWidth;
+        height = image.naturalHeight;
+      }
+
+      if (cancelled || !canvasRef.current) {
+        return;
+      }
+
+      const media = { source, width, height };
+      const ratioNumberResolved = resolveFlutedRatioNumber(frame, width, height);
+      const base = resolveExportDimensions(ratioNumberResolved, media, 1);
+      const scale = refWidth / base.width;
+      const rendered = renderFlutedFrame({ ...params, flutedFrame: frame }, media, scale);
+      const canvas = canvasRef.current;
+      canvas.width = rendered.width;
+      canvas.height = rendered.height;
+      const context = canvas.getContext("2d");
+      context?.clearRect(0, 0, canvas.width, canvas.height);
+      context?.drawImage(rendered, 0, 0);
+    }
+
+    void renderPreview().catch((error) => {
+      console.error("长虹玻璃预览渲染失败:", error);
+      if (!cancelled && canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
+        context?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
+    };
+  }, [flutedFrame, mediaType, mediaUrl, params, refWidth]);
+
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(ratio, ratioNumber),
+          background: "transparent"
+        }
+      : variant === "hero"
+        ? {
+            background: "transparent",
+            height: "100%",
+            width: "100%"
+          }
+        : {
+            aspectRatio: ratio,
+            background: "transparent"
+          };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-fluted`)}
+      style={stageStyle}
+    >
+      <canvas className="fluted-preview-canvas" ref={canvasRef} />
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -731,13 +872,15 @@ export function CardPreview({
   const glassFrame = template?.family === "glass-frame" ? params.glassFrame : undefined;
   const glassSillFrame = template?.family === "glass-sill-frame" ? params.glassSillFrame : undefined;
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
+  const flutedFrame = template?.family === "fluted-frame" ? params.flutedFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl);
   const frameCanvasRatio =
     refinedFrame?.canvasRatio ??
     gridFrame?.canvasRatio ??
     glassFrame?.canvasRatio ??
     glassSillFrame?.canvasRatio ??
-    bandFrame?.canvasRatio;
+    bandFrame?.canvasRatio ??
+    flutedFrame?.canvasRatio;
   const { ratio, ratioNumber } = resolveCanvasRatio(frameCanvasRatio, imageRatio ?? undefined, params.canvas.ratio);
 
   function renderMedia(alt: string) {
@@ -811,6 +954,20 @@ export function CardPreview({
         ratio={ratio}
         ratioNumber={ratioNumber}
         renderMedia={renderMedia}
+        variant={variant}
+      />
+    );
+  }
+
+  if (framed && flutedFrame) {
+    return (
+      <FlutedCardPreview
+        flutedFrame={flutedFrame}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
         variant={variant}
       />
     );

@@ -1,4 +1,5 @@
-import type { BandColorChoice, BandFrameConfig, CanvasRatio, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, TemplateParams } from "../types";
+import type { BandColorChoice, BandFrameConfig, CanvasRatio, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, TemplateParams } from "../types";
+import { clampFlutedFrame } from "./flutedFrame";
 import { getTemplateById, templateRegistry, type TemplateDefinition } from "./registry";
 import { clampGlassFrame } from "./glassFrame";
 import { clampGlassSillFrame } from "./glassSillFrame";
@@ -57,6 +58,18 @@ function cloneParams(params: TemplateParams): TemplateParams {
 }
 
 export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
+  if (base.flutedFrame) {
+    return {
+      ...cloneParams(base),
+      flutedFrame: clampFlutedFrame({
+        ...base.flutedFrame,
+        windowMargin: range(12, 22),
+        innerRadius: range(12, 32),
+        borderWidth: range(3, 6)
+      })
+    };
+  }
+
   if (base.glassSillFrame) {
     return {
       ...cloneParams(base),
@@ -229,6 +242,14 @@ export function randomizeFull(): { templateId: string; params: TemplateParams } 
 
 export function mergeTemplateParams(base: TemplateParams, next: TemplateParams): TemplateParams {
   return cloneParams(next);
+}
+
+export function normalizeFlutedFrame(frame?: FlutedFrameConfig): FlutedFrameConfig | undefined {
+  if (!frame) {
+    return undefined;
+  }
+
+  return clampFlutedFrame(frame);
 }
 
 export function normalizeGlassFrame(frame?: GlassFrameConfig): GlassFrameConfig | undefined {

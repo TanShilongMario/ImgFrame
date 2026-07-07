@@ -4,10 +4,11 @@ import { HeroUploadCard } from "./HeroUploadCard";
 
 type EditorEmptyStageProps = {
   isBusy: boolean;
+  imageOnly?: boolean;
   onMagicFrame: (file: File, options: HeroUploadOptions) => void | Promise<void>;
 };
 
-export function EditorEmptyStage({ isBusy, onMagicFrame }: EditorEmptyStageProps) {
+export function EditorEmptyStage({ isBusy, imageOnly = false, onMagicFrame }: EditorEmptyStageProps) {
   const flow = useUploadCardFlow({ isBusy, onMagicFrame });
 
   return (
@@ -15,6 +16,7 @@ export function EditorEmptyStage({ isBusy, onMagicFrame }: EditorEmptyStageProps
       <HeroUploadCard
         ceremonyLabel={flow.ceremonyLabel}
         ceremonyPhase={flow.ceremonyPhase}
+        imageOnly={imageOnly}
         isBusy={isBusy}
         isDragOver={flow.isDragOver}
         previewUrl={flow.previewUrl}

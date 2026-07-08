@@ -3746,14 +3746,27 @@ html[data-layout="mobile"] body {
 }
 
 .mobile-stage .stage-main {
+  align-items: center;
+  display: flex;
   flex: 1 1 auto;
+  justify-content: center;
   min-height: 0;
+  overflow: hidden;
 }
 
-.mobile-stage .stage-main > .card-preview,
+.mobile-stage .stage-main > .card-preview {
+  flex: 0 1 auto;
+  height: auto !important;
+  max-height: 100%;
+  max-width: 100%;
+  width: auto !important;
+}
+
 .mobile-stage .stage-main > .stage-empty-upload {
+  flex: 1 1 auto;
   height: 100%;
   max-height: 100%;
+  width: 100%;
 }
 
 .mobile-stage .stage-empty-upload {
@@ -3836,6 +3849,7 @@ html[data-layout="mobile"] body {
 
 .mobile-workspace.is-panel-params .mobile-stage .stage-main > .card-preview {
   max-height: 100%;
+  max-width: 100%;
 }
 
 .mobile-workspace.is-panel-open .hero-upload-card-inline {
@@ -4016,7 +4030,13 @@ html[data-layout="mobile"] body {
 }
 
 html[data-layout="mobile"] .app-toast {
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  bottom: auto;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  transform: translate(-50%, -8px);
+}
+
+html[data-layout="mobile"] .app-toast.is-visible {
+  transform: translate(-50%, 0);
 }
 
 .stage-main > .card-preview.card-preview-fluted,
@@ -4034,6 +4054,63 @@ html[data-layout="mobile"] .app-toast {
 .card-preview-fluted,
 .card-preview-swatch {
   overflow: hidden;
+}
+
+.mobile-save-preview {
+  inset: 0;
+  position: fixed;
+  z-index: 300;
+}
+
+.mobile-save-preview-backdrop {
+  background: rgba(8, 8, 8, 0.72);
+  inset: 0;
+  position: absolute;
+}
+
+.mobile-save-preview-sheet {
+  background: #1f1f1d;
+  border-radius: 20px 20px 0 0;
+  bottom: 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.32);
+  left: 0;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 24px);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  position: absolute;
+  right: 0;
+}
+
+.mobile-save-preview-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.mobile-save-preview-header p {
+  color: rgba(240, 239, 235, 0.88);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mobile-save-preview-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 999px;
+  color: rgba(240, 239, 235, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.mobile-save-preview-image {
+  border-radius: 12px;
+  display: block;
+  max-height: calc(100dvh - 160px);
+  object-fit: contain;
+  width: 100%;
 }
 
 

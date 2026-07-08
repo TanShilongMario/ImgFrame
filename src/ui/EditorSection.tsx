@@ -453,9 +453,6 @@ export function EditorSection({
 
   function handleTemplateSelect(templateId: string) {
     onSelectTemplate(templateId);
-    if (isMobile) {
-      setActiveSheet("none");
-    }
   }
 
   function openSheet(next: "templates" | "params") {
@@ -508,8 +505,8 @@ export function EditorSection({
         className={isMobile ? "stage-action-primary" : "stage-action-download"}
         disabled={!project || !mediaAsset || isBusy}
         kind="download"
-        label={imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
-        title={imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
+        label={isMobile ? "保存到相册" : imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
+        title={isMobile ? "保存到相册" : imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
         onClick={onDownloadResult}
       />
     </div>

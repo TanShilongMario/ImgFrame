@@ -12,7 +12,7 @@ import { applyMagicModeParams } from "../project/magicMode";
 import { getTemplateById } from "../templates/registry";
 import { mediaRepository, projectRepository, settingsRepository } from "../storage/repositories";
 import type { MediaAsset, Project, TemplateParams } from "../types";
-import { downloadBlob, sanitizeFilename } from "../export/canvasUtils";
+import { downloadBlob, sanitizeFilename, saveImageBlob } from "../export/canvasUtils";
 import { exportProjectImage } from "../export/exportProjectImage";
 import { preloadFfmpeg } from "../export/transcodeToMp4";
 import type { HeroUploadOptions } from "../ui/HeroPage";
@@ -35,6 +35,7 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
   const [status, setStatus] = useState("等待上传素材");
   const [toastVisible, setToastVisible] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
+  const [savePreviewUrl, setSavePreviewUrl] = useState<string | undefined>(undefined);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -226,6 +227,23 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
     });
   }
 
+  useEffect(() => {
+    return () => {
+      if (savePreviewUrl) {
+        URL.revokeObjectURL(savePreviewUrl);
+      }
+    };
+  }, [savePreviewUrl]);
+
+  function dismissSavePreview() {
+    setSavePreviewUrl((current) => {
+      if (current) {
+        URL.revokeObjectURL(current);
+      }
+      return undefined;
+    });
+  }
+
   async function handleDownloadResult() {
     if (!project) {
       return;
@@ -248,9 +266,21 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
 
       const blob = await exportProjectImage(project, mediaAsset, mediaUrl, { format: "png" });
       const filename = `${sanitizeFilename(project.name)}.png`;
-      downloadBlob(blob, filename);
-      setStatus("结果图已下载");
+      const result = await saveImageBlob(blob, filename, { preferNativeSave: imagesOnly });
+
+      if (result === "preview") {
+        dismissSavePreview();
+        setSavePreviewUrl(URL.createObjectURL(blob));
+        setStatus("长按图片保存到相册");
+        return;
+      }
+
+      setStatus(result === "shared" ? "已分享，可选择保存到相册" : "结果图已保存");
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setStatus("已取消保存");
+        return;
+      }
       setStatus(error instanceof Error ? error.message : "导出失败");
     } finally {
       setIsBusy(false);
@@ -264,6 +294,8 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
     status,
     toastVisible,
     isBusy,
+    savePreviewUrl,
+    dismissSavePreview,
     handleMagicFrame,
     handleUpload,
     handleShuffleParams,

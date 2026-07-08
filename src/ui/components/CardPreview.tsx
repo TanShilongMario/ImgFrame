@@ -184,6 +184,8 @@ function GlassCardPreview({
   const blurPx = cssPx(glassFrame.blur, refWidth);
   const textInsetX = cssPx(18, refWidth);
   const textInsetY = cssPx(22, refWidth);
+  const titleSize = Math.min(cssPx(28, refWidth), Math.max(cssPx(16, refWidth), refWidth * 0.042));
+  const subtitleSize = Math.min(cssPx(14, refWidth), Math.max(cssPx(10, refWidth), refWidth * 0.018));
   const stageStyle =
     variant === "stage"
       ? {
@@ -253,10 +255,21 @@ function GlassCardPreview({
             top: `${textInsetY}px`
           }}
         >
-          <h3 className={surface()} style={{ color: textColors.title }}>
+          <h3
+            className={surface()}
+            style={{ color: textColors.title, fontSize: `${titleSize}px`, lineHeight: 1.1 }}
+          >
             {params.text.title.slice(0, 24)}
           </h3>
-          <p className={surface()} style={{ color: textColors.subtitle }}>
+          <p
+            className={surface()}
+            style={{
+              color: textColors.subtitle,
+              fontSize: `${subtitleSize}px`,
+              lineHeight: 1.35,
+              marginTop: `${titleSize * 0.18}px`
+            }}
+          >
             {params.text.subtitle.slice(0, 48)}
           </p>
         </div>
@@ -470,6 +483,13 @@ function RefinedCardPreview({
   const visibleWidth = 100 - refinedFrame.cropWidth;
   const verticalInset = refinedFrame.cropHeight / 2;
   const blurPx = cssPx(refinedFrame.backgroundBlur, refWidth);
+  const refHeight = refWidth / ratioNumber;
+  const frameHeightPx = refHeight * (1 - refinedFrame.cropHeight / 100);
+  const creditFontSize = Math.min(cssPx(14, refWidth), Math.max(cssPx(9, refWidth), refWidth * 0.012));
+  const creditBottomInset = Math.min(
+    cssPx(28, refHeight, refHeight),
+    Math.max(cssPx(14, refHeight, refHeight), frameHeightPx * 0.03)
+  );
   const stageStyle =
     variant === "stage"
       ? {
@@ -507,7 +527,12 @@ function RefinedCardPreview({
         />
         <p
           className={surface("refined-preview-credit")}
-          style={{ color: creditColor, fontFamily: getFontStack(params.text.fontFamily) }}
+          style={{
+            bottom: `${creditBottomInset}px`,
+            color: creditColor,
+            fontFamily: getFontStack(params.text.fontFamily),
+            fontSize: `${creditFontSize}px`
+          }}
         >
           {params.text.credit}
         </p>
@@ -578,7 +603,11 @@ function BandCardPreview({
             </span>
             <span
               className={surface("band-preview-title")}
-              style={{ color: textColors.title, fontSize: `${titlePx}px` }}
+              style={{
+                color: textColors.title,
+                fontSize: `${titlePx}px`,
+                marginTop: `${subtitlePx * 0.7}px`
+              }}
             >
               {params.text.title.slice(0, 40)}
             </span>
@@ -606,10 +635,14 @@ function GridCardPreview({
   renderMedia: (alt: string) => ReactNode;
   mediaName: string;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || GLASS_RADIUS_REF_WIDTH;
   const cells = getGridCellRects(gridFrame);
   const titleCell = cells[8];
   const lineColor = getGridLineColor(gridFrame.lineTone);
   const titleColor = getGridTitleColor(gridFrame.lineTone);
+  const titleFontSize = Math.min(cssPx(28, refWidth), Math.max(cssPx(14, refWidth), refWidth * 0.045));
   const stageStyle =
     variant === "stage"
       ? {
@@ -620,6 +653,7 @@ function GridCardPreview({
 
   return (
     <div
+      ref={rootRef}
       className={surface(`card-preview card-preview-${variant} card-preview-grid`)}
       style={stageStyle}
     >
@@ -712,6 +746,7 @@ function GridCardPreview({
         style={{
           color: titleColor,
           fontFamily: getFontStack(params.text.fontFamily),
+          fontSize: `${titleFontSize}px`,
           height: `${titleCell.height}%`,
           left: `${titleCell.left}%`,
           top: `${titleCell.top}%`,

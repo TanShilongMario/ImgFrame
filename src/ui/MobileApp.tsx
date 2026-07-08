@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { EditorSection } from "./EditorSection";
+import { MobileSavePreview } from "./components/MobileSavePreview";
 
 export function MobileApp() {
   useAppTheme();
@@ -34,6 +35,10 @@ export function MobileApp() {
       <div aria-live="polite" className={`app-toast${workspace.toastVisible ? " is-visible" : ""}`} role="status">
         {workspace.status}
       </div>
+
+      {workspace.savePreviewUrl ? (
+        <MobileSavePreview imageUrl={workspace.savePreviewUrl} onClose={workspace.dismissSavePreview} />
+      ) : null}
     </div>
   );
 }

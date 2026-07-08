@@ -186,3 +186,33 @@ export function downloadBlob(blob: Blob, filename: string) {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+export type SaveImageResult = "shared" | "downloaded" | "preview";
+
+/** 优先通过系统分享保存（iOS/Android 相册），否则下载或返回预览 URL */
+export async function saveImageBlob(
+  blob: Blob,
+  filename: string,
+  options?: { preferNativeSave?: boolean }
+): Promise<SaveImageResult> {
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
+  const sharePayload = { files: [file] };
+
+  if (options?.preferNativeSave && typeof navigator.share === "function" && navigator.canShare?.(sharePayload)) {
+    try {
+      await navigator.share(sharePayload);
+      return "shared";
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+    }
+  }
+
+  if (!options?.preferNativeSave) {
+    downloadBlob(blob, filename);
+    return "downloaded";
+  }
+
+  return "preview";
+}

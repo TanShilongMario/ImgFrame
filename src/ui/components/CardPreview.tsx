@@ -1,6 +1,7 @@
 import type {
   BandFrameConfig,
   CanvasRatio,
+  DotFrameConfig,
   FlutedFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -56,9 +57,11 @@ import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
 import { renderFlutedFrame } from "../../export/renderFlutedFrame";
+import { renderDotFrame } from "../../export/renderDotFrame";
 import { renderSwatchFrame } from "../../export/renderSwatchFrame";
 import { resolveExportDimensions } from "../../export/sizing";
 import { clampFlutedFrame, resolveFlutedRatioNumber } from "../../templates/flutedFrame";
+import { clampDotFrame, resolveDotRatioNumber } from "../../templates/dotFrame";
 import { clampSwatchFrame, resolveSwatchRatioNumber } from "../../templates/swatchFrame";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -1033,6 +1036,143 @@ function SwatchCardPreview({
   );
 }
 
+type DotCardPreviewProps = {
+  dotFrame: DotFrameConfig;
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+};
+
+function DotCardPreview({
+  dotFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant
+}: DotCardPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || 360;
+  const frame = clampDotFrame(dotFrame);
+
+  useEffect(() => {
+    if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
+      return;
+    }
+
+    let cancelled = false;
+    let video: HTMLVideoElement | undefined;
+
+    async function renderPreview() {
+      const sourceUrl = mediaUrl;
+      if (!sourceUrl) {
+        return;
+      }
+
+      let source: CanvasImageSource;
+      let width: number;
+      let height: number;
+
+      if (mediaType === "video") {
+        video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.src = sourceUrl;
+
+        await new Promise<void>((resolve, reject) => {
+          video!.onloadeddata = () => resolve();
+          video!.onerror = () => reject(new Error("无法加载视频预览。"));
+        });
+
+        video.currentTime = 0;
+        await new Promise<void>((resolve) => {
+          video!.onseeked = () => resolve();
+        });
+
+        source = video;
+        width = video.videoWidth;
+        height = video.videoHeight;
+      } else {
+        const image = new Image();
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error("无法加载图片预览。"));
+          image.src = sourceUrl;
+        });
+        source = image;
+        width = image.naturalWidth;
+        height = image.naturalHeight;
+      }
+
+      if (cancelled || !canvasRef.current) {
+        return;
+      }
+
+      const media = { source, width, height };
+      const ratioNumberResolved = variant === "hero" ? ratioNumber : resolveDotRatioNumber(frame, width, height);
+      const base = resolveExportDimensions(ratioNumberResolved, media, 1);
+      const scale = refWidth / base.width;
+      const rendered = renderDotFrame({ ...params, dotFrame: frame }, media, scale);
+      const canvas = canvasRef.current;
+      canvas.width = rendered.width;
+      canvas.height = rendered.height;
+      const context = canvas.getContext("2d");
+      context?.clearRect(0, 0, canvas.width, canvas.height);
+      context?.drawImage(rendered, 0, 0);
+    }
+
+    void renderPreview().catch((error) => {
+      console.error("波点预览渲染失败:", error);
+      if (!cancelled && canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
+        context?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
+    };
+  }, [dotFrame, mediaType, mediaUrl, params, refWidth, ratioNumber, variant]);
+
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(ratio, ratioNumber),
+          background: "transparent"
+        }
+      : variant === "hero"
+        ? {
+            background: "transparent",
+            height: "100%",
+            width: "100%"
+          }
+        : {
+            aspectRatio: ratio,
+            background: "transparent"
+          };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-dot`)}
+      style={stageStyle}
+    >
+      <canvas className="dot-preview-canvas" ref={canvasRef} />
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -1051,6 +1191,7 @@ export function CardPreview({
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
   const flutedFrame = template?.family === "fluted-frame" ? params.flutedFrame : undefined;
   const swatchFrame = template?.family === "swatch-frame" ? params.swatchFrame : undefined;
+  const dotFrame = template?.family === "dot-frame" ? params.dotFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl);
   const frameCanvasRatio =
     refinedFrame?.canvasRatio ??
@@ -1059,7 +1200,8 @@ export function CardPreview({
     glassSillFrame?.canvasRatio ??
     bandFrame?.canvasRatio ??
     flutedFrame?.canvasRatio ??
-    swatchFrame?.canvasRatio;
+    swatchFrame?.canvasRatio ??
+    dotFrame?.canvasRatio;
   const { ratio, ratioNumber } =
     variant === "hero"
       ? { ratio: HERO_PREVIEW_RATIO, ratioNumber: HERO_PREVIEW_RATIO_NUMBER }
@@ -1159,6 +1301,20 @@ export function CardPreview({
     return (
       <SwatchCardPreview
         swatchFrame={swatchFrame}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        variant={variant}
+      />
+    );
+  }
+
+  if (framed && dotFrame) {
+    return (
+      <DotCardPreview
+        dotFrame={dotFrame}
         mediaType={mediaType}
         mediaUrl={mediaUrl}
         params={params}

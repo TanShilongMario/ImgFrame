@@ -22,8 +22,21 @@ export const FLUTED_SHADER_DEFAULTS = {
 export const FLUTED_DEFAULTS = {
   windowMargin: 16,
   innerRadius: 20,
-  borderWidth: 4
+  borderWidth: 4,
+  seed: 42
 };
+
+function seededRandom(seed: number): () => number {
+  let state = seed % 2147483647;
+  if (state <= 0) {
+    state += 2147483646;
+  }
+
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+}
 
 export function clampFlutedFrame(frame: FlutedFrameConfig): FlutedFrameConfig {
   return {
@@ -40,7 +53,8 @@ export function clampFlutedFrame(frame: FlutedFrameConfig): FlutedFrameConfig {
     borderWidth: Math.min(
       Math.max(frame.borderWidth ?? FLUTED_DEFAULTS.borderWidth, FLUTED_FRAME_LIMITS.borderWidth.min),
       FLUTED_FRAME_LIMITS.borderWidth.max
-    )
+    ),
+    seed: Math.max(0, Math.round(frame.seed ?? FLUTED_DEFAULTS.seed))
   };
 }
 
@@ -67,9 +81,18 @@ export function getFlutedLayoutPx(frame: FlutedFrameConfig, canvasWidth: number,
   };
 }
 
-export function getFlutedShaderUniforms() {
+import type { FlutedShaderUniforms } from "../webgl/flutedShader";
+
+export function deriveFlutedShaderUniformsFromSeed(seed: number): FlutedShaderUniforms {
+  const rand = seededRandom(seed);
+
   return {
-    ...FLUTED_SHADER_DEFAULTS,
+    shape: 1,
+    size: 0.82 + rand() * 0.16,
+    distortion: 0.52 + rand() * 0.38,
+    shadows: 0.18 + rand() * 0.28,
+    highlights: 0.03 + rand() * 0.09,
+    angle: 0,
     time: 0
   };
 }

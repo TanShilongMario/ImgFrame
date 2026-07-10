@@ -4,6 +4,7 @@ import type { Project } from "../../types";
 import type { TextFontId } from "../../templates/fonts";
 import {
   buildBandMobileTabs,
+  buildDotMobileTabs,
   buildFlutedMobileTabs,
   buildSwatchMobileTabs,
   buildGlassMobileTabs,
@@ -14,6 +15,7 @@ import {
 import { MobileTabbedInspector } from "./MobileTabbedInspector";
 import type {
   BandFrameConfig,
+  DotFrameConfig,
   FlutedFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -32,8 +34,11 @@ type MobileInspectorPanelProps = {
   onChangeGlassSillFrame: (frame: GlassSillFrameConfig) => void;
   onChangeBandFrame: (frame: BandFrameConfig) => void;
   onChangeFlutedFrame: (frame: FlutedFrameConfig) => void;
+  onChangeFlutedSeed: (seed: number) => void;
   onChangeSwatchFrame: (frame: SwatchFrameConfig) => void;
   onChangeSwatchSeed: (seed: number) => void;
+  onChangeDotFrame: (frame: DotFrameConfig) => void;
+  onChangeDotSeed: (seed: number) => void;
   onChangeTextField: (field: "title" | "subtitle" | "credit", value: string, maxLength: number) => void;
   onChangeFont: (font: TextFontId) => void;
   onApplyGlassSystemBacking: () => void;
@@ -51,8 +56,11 @@ export function MobileInspectorPanel({
   onChangeGlassSillFrame,
   onChangeBandFrame,
   onChangeFlutedFrame,
+  onChangeFlutedSeed,
   onChangeSwatchFrame,
   onChangeSwatchSeed,
+  onChangeDotFrame,
+  onChangeDotSeed,
   onChangeTextField,
   onChangeFont,
   onApplyGlassSystemBacking,
@@ -69,6 +77,7 @@ export function MobileInspectorPanel({
   const bandFrame = activeTemplate.family === "band-frame" ? project.templateParams.bandFrame : undefined;
   const flutedFrame = activeTemplate.family === "fluted-frame" ? project.templateParams.flutedFrame : undefined;
   const swatchFrame = activeTemplate.family === "swatch-frame" ? project.templateParams.swatchFrame : undefined;
+  const dotFrame = activeTemplate.family === "dot-frame" ? project.templateParams.dotFrame : undefined;
 
   const tabs = useMemo(() => {
     if (refinedFrame) {
@@ -135,7 +144,8 @@ export function MobileInspectorPanel({
     if (flutedFrame) {
       return buildFlutedMobileTabs({
         frame: flutedFrame,
-        onChangeFrame: onChangeFlutedFrame
+        onChangeFrame: onChangeFlutedFrame,
+        onChangeSeed: onChangeFlutedSeed
       });
     }
 
@@ -147,10 +157,19 @@ export function MobileInspectorPanel({
       });
     }
 
+    if (dotFrame) {
+      return buildDotMobileTabs({
+        frame: dotFrame,
+        onChangeFrame: onChangeDotFrame,
+        onChangeSeed: onChangeDotSeed
+      });
+    }
+
     return [];
   }, [
     activeFont,
     bandFrame,
+    dotFrame,
     flutedFrame,
     swatchFrame,
     glassFrame,
@@ -161,6 +180,9 @@ export function MobileInspectorPanel({
     onApplyGlassSystemBacking,
     onChangeBandFrame,
     onChangeFlutedFrame,
+    onChangeFlutedSeed,
+    onChangeDotFrame,
+    onChangeDotSeed,
     onChangeSwatchFrame,
     onChangeSwatchSeed,
     onChangeFont,

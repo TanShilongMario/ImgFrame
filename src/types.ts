@@ -114,6 +114,8 @@ export type FlutedFrameConfig = {
   innerRadius: number;
   /** 中央图浅白描边宽度 */
   borderWidth: number;
+  /** 长虹玻璃随机种子（影响纹理疏密、扭曲与光影） */
+  seed: number;
 };
 
 export type SwatchFrameConfig = {
@@ -127,6 +129,16 @@ export type SwatchFrameConfig = {
   /** 背景色条等分数（3–6） */
   segmentCount: number;
   /** 随机取色种子 */
+  seed: number;
+};
+
+export type DotFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  /** 中央图距边缘的间距（%，越大中央图越小） */
+  windowMargin: number;
+  innerRadius: number;
+  borderWidth: number;
+  /** 波点随机种子（影响密度、大小与分布） */
   seed: number;
 };
 
@@ -157,6 +169,7 @@ export type TemplateParams = {
   bandFrame?: BandFrameConfig;
   flutedFrame?: FlutedFrameConfig;
   swatchFrame?: SwatchFrameConfig;
+  dotFrame?: DotFrameConfig;
 };
 
 export type Project = {

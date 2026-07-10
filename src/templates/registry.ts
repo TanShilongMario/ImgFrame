@@ -194,7 +194,8 @@ export const templateRegistry: TemplateDefinition[] = [
         canvasRatio: "auto",
         windowMargin: 16,
         innerRadius: 20,
-        borderWidth: 4
+        borderWidth: 4,
+        seed: 42
       }
     }
   },
@@ -225,6 +226,36 @@ export const templateRegistry: TemplateDefinition[] = [
         innerRadius: 20,
         borderWidth: 4,
         segmentCount: 4,
+        seed: 42
+      }
+    }
+  },
+  {
+    id: "polka-dots",
+    name: "波点",
+    family: "dot-frame",
+    baseParams: {
+      ...defaultTemplateParams,
+      canvas: { ratio: "3:4", background: "transparent", padding: 0 },
+      media: {
+        radius: 0,
+        borderWidth: 0,
+        borderColor: "#ffffff",
+        shadow: { blur: 0, offsetX: 0, offsetY: 0, opacity: 0 },
+        crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+      },
+      text: {
+        title: "",
+        subtitle: "",
+        credit: "波点",
+        titleColor: "#ffffff",
+        fontFamily: "sans"
+      },
+      dotFrame: {
+        canvasRatio: "auto",
+        windowMargin: 16,
+        innerRadius: 20,
+        borderWidth: 4,
         seed: 42
       }
     }

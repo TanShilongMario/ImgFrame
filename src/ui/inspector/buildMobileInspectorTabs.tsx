@@ -1,6 +1,7 @@
 import { Dices } from "lucide-react";
 import type {
   BandFrameConfig,
+  DotFrameConfig,
   FlutedFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -9,6 +10,7 @@ import type {
   RefinedFrameConfig
 } from "../../types";
 import { BAND_FRAME_LIMITS } from "../../templates/bandFrame";
+import { DOT_FRAME_LIMITS } from "../../templates/dotFrame";
 import { FLUTED_FRAME_LIMITS } from "../../templates/flutedFrame";
 import { SWATCH_FRAME_LIMITS } from "../../templates/swatchFrame";
 import { GLASS_FRAME_LIMITS } from "../../templates/glassFrame";
@@ -652,10 +654,12 @@ export function buildBandMobileTabs({
 
 export function buildFlutedMobileTabs({
   frame,
-  onChangeFrame
+  onChangeFrame,
+  onChangeSeed
 }: {
   frame: FlutedFrameConfig;
   onChangeFrame: (frame: FlutedFrameConfig) => void;
+  onChangeSeed: (seed: number) => void;
 }): MobileInspectorTab[] {
   return [
     {
@@ -706,6 +710,27 @@ export function buildFlutedMobileTabs({
           value={frame.borderWidth}
           onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
         />
+      )
+    },
+    {
+      id: "seed",
+      label: "长虹",
+      content: (
+        <div className="field field-control seed-control">
+          <span>随机长虹</span>
+          <div className="seed-value-row">
+            <strong>{frame.seed}</strong>
+            <button
+              aria-label="重掷长虹玻璃参数"
+              className="seed-dice"
+              title="重掷长虹玻璃参数"
+              type="button"
+              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
+            >
+              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
       )
     }
   ];
@@ -798,6 +823,90 @@ export function buildSwatchMobileTabs({
               aria-label="重掷随机取色"
               className="seed-dice"
               title="重掷随机取色"
+              type="button"
+              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
+            >
+              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+      )
+    }
+  ];
+}
+
+export function buildDotMobileTabs({
+  frame,
+  onChangeFrame,
+  onChangeSeed
+}: {
+  frame: DotFrameConfig;
+  onChangeFrame: (frame: DotFrameConfig) => void;
+  onChangeSeed: (seed: number) => void;
+}): MobileInspectorTab[] {
+  return [
+    {
+      id: "ratio",
+      label: "比例",
+      content: <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} />
+    },
+    {
+      id: "margin",
+      label: "边距",
+      content: (
+        <RangeControl
+          label="边缘间距"
+          max={DOT_FRAME_LIMITS.windowMargin.max}
+          min={DOT_FRAME_LIMITS.windowMargin.min}
+          step={1}
+          suffix="%"
+          value={frame.windowMargin}
+          onChange={(value) => onChangeFrame({ ...frame, windowMargin: value })}
+        />
+      )
+    },
+    {
+      id: "inner-radius",
+      label: "圆角",
+      content: (
+        <RangeControl
+          label="中央圆角"
+          max={DOT_FRAME_LIMITS.innerRadius.max}
+          min={DOT_FRAME_LIMITS.innerRadius.min}
+          step={2}
+          suffix="px"
+          value={frame.innerRadius}
+          onChange={(value) => onChangeFrame({ ...frame, innerRadius: value })}
+        />
+      )
+    },
+    {
+      id: "border",
+      label: "描边",
+      content: (
+        <RangeControl
+          label="描边宽度"
+          max={DOT_FRAME_LIMITS.borderWidth.max}
+          min={DOT_FRAME_LIMITS.borderWidth.min}
+          step={1}
+          suffix="px"
+          value={frame.borderWidth}
+          onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
+        />
+      )
+    },
+    {
+      id: "seed",
+      label: "波点",
+      content: (
+        <div className="field field-control seed-control">
+          <span>随机波点</span>
+          <div className="seed-value-row">
+            <strong>{frame.seed}</strong>
+            <button
+              aria-label="重掷波点参数"
+              className="seed-dice"
+              title="重掷波点参数"
               type="button"
               onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
             >

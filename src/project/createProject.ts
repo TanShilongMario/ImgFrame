@@ -1,6 +1,6 @@
 import { createId } from "../utils/id";
 import type { GridFrameConfig, MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
-import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizeSwatchFrame } from "../templates/randomize";
+import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeDotFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizeSwatchFrame } from "../templates/randomize";
 import { getTemplateById } from "../templates/registry";
 import { normalizeTextFont } from "../templates/fonts";
 
@@ -68,6 +68,14 @@ export function normalizeProject(project: Project): Project {
     templateParams = {
       ...templateParams,
       swatchFrame
+    };
+  }
+
+  const dotFrame = normalizeDotFrame(templateParams.dotFrame);
+  if (dotFrame) {
+    templateParams = {
+      ...templateParams,
+      dotFrame
     };
   }
 

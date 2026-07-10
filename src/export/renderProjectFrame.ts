@@ -5,6 +5,7 @@ import { renderBandFrame } from "./renderBandFrame";
 import { renderGlassFrame } from "./renderGlassFrame";
 import { renderGridFrame } from "./renderGridFrame";
 import { renderFlutedFrame } from "./renderFlutedFrame";
+import { renderDotFrame } from "./renderDotFrame";
 import { renderSwatchFrame } from "./renderSwatchFrame";
 import { renderGlassSillFrame } from "./renderGlassSillFrame";
 import { renderRefinedBlurFrame } from "./renderRefinedBlurFrame";
@@ -46,6 +47,10 @@ export function renderProjectFrame(
 
   if (template.family === "swatch-frame") {
     return renderSwatchFrame(project.templateParams, media, scale);
+  }
+
+  if (template.family === "dot-frame") {
+    return renderDotFrame(project.templateParams, media, scale);
   }
 
   return renderStandardFrame(project.templateParams, media, scale);

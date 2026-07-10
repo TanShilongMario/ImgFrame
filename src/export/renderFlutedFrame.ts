@@ -2,7 +2,7 @@ import type { TemplateParams } from "../types";
 import {
   clampFlutedFrame,
   getFlutedLayoutPx,
-  getFlutedShaderUniforms,
+  deriveFlutedShaderUniformsFromSeed,
   resolveFlutedRatioNumber
 } from "../templates/flutedFrame";
 import { cssPx, createCanvas, drawCoverImage, type LoadedMedia } from "./canvasUtils";
@@ -25,7 +25,12 @@ export function renderFlutedFrame(
   const layout = getFlutedLayoutPx(flutedFrame, width, height);
   const borderPx = cssPx(flutedFrame.borderWidth, width);
 
-  const flutedPlate = renderFlutedBackground(media, width, height, getFlutedShaderUniforms());
+  const flutedPlate = renderFlutedBackground(
+    media,
+    width,
+    height,
+    deriveFlutedShaderUniformsFromSeed(flutedFrame.seed)
+  );
 
   context.clearRect(0, 0, width, height);
   context.drawImage(flutedPlate, 0, 0, width, height);

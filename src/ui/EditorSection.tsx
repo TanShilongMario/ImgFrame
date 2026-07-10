@@ -9,6 +9,7 @@ import type {
   MediaAsset,
   Project,
   RefinedFrameConfig,
+  DotFrameConfig,
   SwatchFrameConfig,
   TemplateParams
 } from "../types";
@@ -19,6 +20,7 @@ import {
   deriveGlassSillCausticColor
 } from "../templates/glassSillFrame";
 import { clampFlutedFrame } from "../templates/flutedFrame";
+import { clampDotFrame } from "../templates/dotFrame";
 import { clampSwatchFrame } from "../templates/swatchFrame";
 import { clampGridFrame, withDerivedGridEffects } from "../templates/gridFrame";
 import { clampBandFrame, deriveSystemColor, fallbackSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
@@ -30,6 +32,7 @@ import { StageActionButton } from "./components/StageActionButton";
 import { Sidebar } from "./components/Sidebar";
 import { Field } from "./inspector/controls";
 import { FlutedFrameControls } from "./inspector/FlutedFrameControls";
+import { DotFrameControls } from "./inspector/DotFrameControls";
 import { SwatchFrameControls } from "./inspector/SwatchFrameControls";
 import { BandFrameControls } from "./inspector/BandFrameControls";
 import { GlassFrameControls } from "./inspector/GlassFrameControls";
@@ -84,6 +87,7 @@ export function EditorSection({
   const bandFrame = activeTemplate?.family === "band-frame" ? project?.templateParams.bandFrame : undefined;
   const flutedFrame = activeTemplate?.family === "fluted-frame" ? project?.templateParams.flutedFrame : undefined;
   const swatchFrame = activeTemplate?.family === "swatch-frame" ? project?.templateParams.swatchFrame : undefined;
+  const dotFrame = activeTemplate?.family === "dot-frame" ? project?.templateParams.dotFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
   const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
   const lastGlassSillSampleRef = useRef<{ mediaId?: string; backingHex?: string; causticHex?: string }>({});
@@ -319,6 +323,14 @@ export function EditorSection({
     });
   }
 
+  function updateFlutedSeed(seed: number) {
+    if (!flutedFrame) {
+      return;
+    }
+
+    updateFlutedFrame({ ...flutedFrame, seed });
+  }
+
   function updateSwatchFrame(nextFrame: SwatchFrameConfig) {
     if (!project) {
       return;
@@ -336,6 +348,25 @@ export function EditorSection({
     }
 
     updateSwatchFrame({ ...swatchFrame, seed });
+  }
+
+  function updateDotFrame(nextFrame: DotFrameConfig) {
+    if (!project) {
+      return;
+    }
+
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      dotFrame: clampDotFrame(nextFrame)
+    });
+  }
+
+  function updateDotSeed(seed: number) {
+    if (!dotFrame) {
+      return;
+    }
+
+    updateDotFrame({ ...dotFrame, seed });
   }
 
   function updateTextField(field: "title" | "subtitle" | "credit", value: string, maxLength: number) {
@@ -570,13 +601,19 @@ export function EditorSection({
                 onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 40 : 24)}
               />
             ) : flutedFrame ? (
-              <FlutedFrameControls frame={flutedFrame} onChangeFrame={updateFlutedFrame} />
+              <FlutedFrameControls
+                frame={flutedFrame}
+                onChangeFrame={updateFlutedFrame}
+                onChangeSeed={updateFlutedSeed}
+              />
             ) : swatchFrame ? (
               <SwatchFrameControls
                 frame={swatchFrame}
                 onChangeFrame={updateSwatchFrame}
                 onChangeSeed={updateSwatchSeed}
               />
+            ) : dotFrame ? (
+              <DotFrameControls frame={dotFrame} onChangeFrame={updateDotFrame} onChangeSeed={updateDotSeed} />
             ) : (
           <>
             <Field label="Ratio" value={project?.templateParams.canvas.ratio ?? "-"} />
@@ -659,8 +696,11 @@ export function EditorSection({
                 onChangeRefinedFrame={updateRefinedFrame}
                 onChangeTextField={updateTextField}
                 onChangeFlutedFrame={updateFlutedFrame}
+                onChangeFlutedSeed={updateFlutedSeed}
                 onChangeSwatchFrame={updateSwatchFrame}
                 onChangeSwatchSeed={updateSwatchSeed}
+                onChangeDotFrame={updateDotFrame}
+                onChangeDotSeed={updateDotSeed}
               />
             </div>
           ) : null}

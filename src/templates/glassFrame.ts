@@ -5,7 +5,9 @@ export const GLASS_FRAME_LIMITS = {
   edgeWidth: { min: 0, max: 8 },
   bottomExtra: { min: 0, max: 20 },
   blur: { min: 4, max: 48 },
-  outerRadius: { min: 28, max: 96 }
+  outerRadius: { min: 28, max: 96 },
+  titleSize: { min: 16, max: 48 },
+  subtitleSize: { min: 10, max: 32 }
 } as const;
 
 /** 外矩形圆角默认值（px @720 参考宽） */
@@ -66,6 +68,8 @@ export function clampGlassFrame(frame: GlassFrameConfig): GlassFrameConfig {
     bottomExtra,
     blur,
     outerRadius,
+    titleSize: Math.min(Math.max(frame.titleSize ?? 28, GLASS_FRAME_LIMITS.titleSize.min), GLASS_FRAME_LIMITS.titleSize.max),
+    subtitleSize: Math.min(Math.max(frame.subtitleSize ?? 14, GLASS_FRAME_LIMITS.subtitleSize.min), GLASS_FRAME_LIMITS.subtitleSize.max),
     backingColor: frame.backingColor ?? (frame.backingHex ? "system" : "system"),
     systemBackingHex: frame.systemBackingHex ?? frame.backingHex
   };

@@ -13,6 +13,7 @@ import { getTemplateById } from "../templates/registry";
 import { mediaRepository, projectRepository, settingsRepository } from "../storage/repositories";
 import type { MediaAsset, Project, TemplateParams } from "../types";
 import { downloadBlob, sanitizeFilename, saveImageBlob } from "../export/canvasUtils";
+import { exportProjectGif, shouldExportAsGif } from "../export/exportProjectGif";
 import { exportProjectImage } from "../export/exportProjectImage";
 import { preloadFfmpeg } from "../export/transcodeToMp4";
 import type { HeroUploadOptions } from "../ui/HeroPage";
@@ -262,6 +263,35 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
     setIsBusy(true);
 
     try {
+      if (await shouldExportAsGif(mediaAsset)) {
+        setStatus("正在导出 GIF...");
+
+        const result = await exportProjectGif(project, mediaAsset, mediaUrl, {
+          onProgress: (progress, label) => {
+            if (label) {
+              setStatus(label);
+              return;
+            }
+
+            setStatus(`正在导出 GIF ${Math.round(progress * 100)}%...`);
+          }
+        });
+
+        const filename = `${sanitizeFilename(project.name)}.gif`;
+        const saveResult = await saveImageBlob(result.blob, filename, { preferNativeSave: imagesOnly });
+
+        if (saveResult === "preview") {
+          dismissSavePreview();
+          setSavePreviewUrl(URL.createObjectURL(result.blob));
+          setStatus("长按 GIF 保存到相册");
+          return;
+        }
+
+        const sizeMb = (result.byteSize / (1024 * 1024)).toFixed(1);
+        setStatus(saveResult === "shared" ? `已分享 GIF（${sizeMb}MB）` : `结果 GIF 已保存（${sizeMb}MB）`);
+        return;
+      }
+
       setStatus("正在导出结果图...");
 
       const blob = await exportProjectImage(project, mediaAsset, mediaUrl, { format: "png" });

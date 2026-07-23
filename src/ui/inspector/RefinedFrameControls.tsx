@@ -60,8 +60,17 @@ export function RefinedFrameControls({
           onChange={(gradientTone) => onChangeFrame({ ...frame, gradientTone })}
         />
       </div>
+      <RangeControl
+        label="署名字号"
+        max={24}
+        min={9}
+        step={1}
+        suffix="px"
+        value={frame.creditSize}
+        onChange={(creditSize) => onChangeFrame({ ...frame, creditSize })}
+      />
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="文字内容" maxLength={48} value={credit} onChange={onChangeCredit} />
+      <TextAreaControl label="文字内容" maxLength={72} value={credit} onChange={onChangeCredit} />
     </>
   );
 }

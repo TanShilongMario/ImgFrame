@@ -82,11 +82,29 @@ export function GlassFrameControls({
           onChange={(textTone) => onChangeFrame({ ...frame, textTone })}
         />
       </div>
+      <RangeControl
+        label="标题字号"
+        max={GLASS_FRAME_LIMITS.titleSize.max}
+        min={GLASS_FRAME_LIMITS.titleSize.min}
+        step={1}
+        suffix="px"
+        value={frame.titleSize}
+        onChange={(titleSize) => onChangeFrame({ ...frame, titleSize })}
+      />
+      <RangeControl
+        label="副标题字号"
+        max={GLASS_FRAME_LIMITS.subtitleSize.max}
+        min={GLASS_FRAME_LIMITS.subtitleSize.min}
+        step={1}
+        suffix="px"
+        value={frame.subtitleSize}
+        onChange={(subtitleSize) => onChangeFrame({ ...frame, subtitleSize })}
+      />
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="标题" maxLength={24} value={title} onChange={(value) => onChangeText("title", value)} />
+      <TextAreaControl label="标题" maxLength={40} value={title} onChange={(value) => onChangeText("title", value)} />
       <TextAreaControl
         label="副标题"
-        maxLength={48}
+        maxLength={72}
         value={subtitle}
         onChange={(value) => onChangeText("subtitle", value)}
       />

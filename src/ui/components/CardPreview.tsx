@@ -1,7 +1,9 @@
 import type {
   BandFrameConfig,
   CanvasRatio,
+  CornerFrameConfig,
   DotFrameConfig,
+  PrintFrameConfig,
   FlutedFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -50,6 +52,12 @@ import {
   resolveBandColor,
   sampleAverageColorFromUrl
 } from "../../templates/bandFrame";
+import {
+  clampCornerFrame,
+  CORNER_IMAGE_SHADOW,
+  getCornerLayoutPx,
+  getCornerTextColors
+} from "../../templates/cornerFrame";
 import { getFontStack } from "../../templates/fonts";
 import { useElementWidth } from "../../hooks/useElementWidth";
 import { useImageAspectRatio } from "../../hooks/useImageAspectRatio";
@@ -57,10 +65,12 @@ import { getStagePreviewStyle } from "../../preview/stagePreviewStyle";
 import { combinePreviewSurface as surface } from "../../preview/previewParamTransition";
 import { cssPx } from "../../utils/cssPx";
 import { renderFlutedFrame } from "../../export/renderFlutedFrame";
+import { renderPrintFrame } from "../../export/renderPrintFrame";
 import { renderDotFrame } from "../../export/renderDotFrame";
 import { renderSwatchFrame } from "../../export/renderSwatchFrame";
 import { resolveExportDimensions } from "../../export/sizing";
 import { clampFlutedFrame, resolveFlutedRatioNumber } from "../../templates/flutedFrame";
+import { clampPrintFrame, resolvePrintRatioNumber } from "../../templates/printFrame";
 import { clampDotFrame, resolveDotRatioNumber } from "../../templates/dotFrame";
 import { clampSwatchFrame, resolveSwatchRatioNumber } from "../../templates/swatchFrame";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -187,8 +197,8 @@ function GlassCardPreview({
   const blurPx = cssPx(glassFrame.blur, refWidth);
   const textInsetX = cssPx(18, refWidth);
   const textInsetY = cssPx(22, refWidth);
-  const titleSize = Math.min(cssPx(28, refWidth), Math.max(cssPx(16, refWidth), refWidth * 0.042));
-  const subtitleSize = Math.min(cssPx(14, refWidth), Math.max(cssPx(10, refWidth), refWidth * 0.018));
+  const titleSize = cssPx(glassFrame.titleSize, refWidth);
+  const subtitleSize = cssPx(glassFrame.subtitleSize, refWidth);
   const stageStyle =
     variant === "stage"
       ? {
@@ -262,7 +272,7 @@ function GlassCardPreview({
             className={surface()}
             style={{ color: textColors.title, fontSize: `${titleSize}px`, lineHeight: 1.1 }}
           >
-            {params.text.title.slice(0, 24)}
+            {params.text.title.slice(0, 40)}
           </h3>
           <p
             className={surface()}
@@ -273,7 +283,7 @@ function GlassCardPreview({
               marginTop: `${titleSize * 0.18}px`
             }}
           >
-            {params.text.subtitle.slice(0, 48)}
+            {params.text.subtitle.slice(0, 72)}
           </p>
         </div>
       </div>
@@ -372,7 +382,7 @@ function GlassSillCardPreview({
   const windowMediaStyle = getGlassWindowMediaStylePx(insetsPx, refWidth, refHeight);
   const blurPx = cssPx(glassSillFrame.blur, refWidth);
   const captionTop = refHeight - insetsPx.bottom + (insetsPx.bottom - plateInsetPx) / 2;
-  const captionSize = cssPx(18, refWidth);
+  const captionSize = cssPx(glassSillFrame.captionSize, refWidth);
   const stageStyle =
     variant === "stage"
       ? {
@@ -452,7 +462,7 @@ function GlassSillCardPreview({
           top: `${captionTop}px`
         }}
       >
-        {params.text.title.slice(0, 40)}
+        {params.text.title.slice(0, 64)}
       </p>
     </div>
   );
@@ -488,7 +498,7 @@ function RefinedCardPreview({
   const blurPx = cssPx(refinedFrame.backgroundBlur, refWidth);
   const refHeight = refWidth / ratioNumber;
   const frameHeightPx = refHeight * (1 - refinedFrame.cropHeight / 100);
-  const creditFontSize = Math.min(cssPx(14, refWidth), Math.max(cssPx(9, refWidth), refWidth * 0.012));
+  const creditFontSize = cssPx(refinedFrame.creditSize, refWidth);
   const creditBottomInset = Math.min(
     cssPx(28, refHeight, refHeight),
     Math.max(cssPx(14, refHeight, refHeight), frameHeightPx * 0.03)
@@ -602,7 +612,7 @@ function BandCardPreview({
               className={surface("band-preview-subtitle")}
               style={{ color: textColors.subtitle, fontSize: `${subtitlePx}px` }}
             >
-              {params.text.subtitle.slice(0, 24)}
+              {params.text.subtitle.slice(0, 40)}
             </span>
             <span
               className={surface("band-preview-title")}
@@ -612,10 +622,108 @@ function BandCardPreview({
                 marginTop: `${subtitlePx * 0.7}px`
               }}
             >
-              {params.text.title.slice(0, 40)}
+              {params.text.title.slice(0, 64)}
             </span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CornerCardPreview({
+  cornerFrame,
+  params,
+  ratio,
+  ratioNumber,
+  variant,
+  renderMedia,
+  mediaName
+}: {
+  cornerFrame: CornerFrameConfig;
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+  renderMedia: (alt: string) => ReactNode;
+  mediaName: string;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = measuredWidth || GLASS_RADIUS_REF_WIDTH;
+  const refHeight = refWidth / ratioNumber;
+  const frame = clampCornerFrame(cornerFrame);
+  const layout = getCornerLayoutPx(frame, refWidth, refHeight);
+  const backingHex = resolveBandColor(frame.backingColor, frame.systemBackingHex);
+  const textColors = getCornerTextColors(frame.textTone);
+  const fontStack = getFontStack(params.text.fontFamily);
+  const subtitlePx = cssPx(frame.subtitleSize, refWidth);
+  const titlePx = cssPx(frame.titleSize, refWidth);
+  const isRight = frame.textCorner.endsWith("right");
+  const isBottom = frame.textCorner.startsWith("bottom");
+
+  const baseStyle =
+    variant === "stage" ? getStagePreviewStyle(ratio, ratioNumber) : { aspectRatio: ratio };
+  const rootStyle = {
+    ...baseStyle,
+    background: backingHex,
+    boxSizing: "border-box" as const,
+    padding: 0,
+    position: "relative" as const
+  };
+
+  const cardStyle: CSSProperties = {
+    borderRadius: `${layout.mediaRadius}px`,
+    boxShadow: `0 ${cssPx(CORNER_IMAGE_SHADOW.offsetY, refWidth)}px ${cssPx(CORNER_IMAGE_SHADOW.blur, refWidth)}px rgba(24, 24, 24, ${CORNER_IMAGE_SHADOW.opacity})`,
+    height: `${layout.cardH}px`,
+    left: `${layout.cardX}px`,
+    outline: layout.borderPx > 0 ? `${layout.borderPx}px solid rgba(255, 255, 255, 0.96)` : "none",
+    outlineOffset: layout.borderPx > 0 ? `-${layout.borderPx}px` : undefined,
+    position: "absolute",
+    top: `${layout.cardY}px`,
+    width: `${layout.cardW}px`,
+    zIndex: 1
+  };
+
+  const copyStyle: CSSProperties = {
+    alignItems: isRight ? "flex-end" : "flex-start",
+    bottom: isBottom ? `${layout.textPadY}px` : "auto",
+    fontFamily: fontStack,
+    left: isRight ? "auto" : `${layout.textPadX}px`,
+    right: isRight ? `${layout.textPadX}px` : "auto",
+    textAlign: isRight ? "right" : "left",
+    top: isBottom ? "auto" : `${layout.textPadY}px`,
+    zIndex: 2
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-corner`)}
+      style={rootStyle}
+    >
+      <div className={surface("corner-preview-card")} style={cardStyle}>
+        <div className="corner-preview-media">{renderMedia(mediaName)}</div>
+      </div>
+      <div className={surface("corner-preview-copy")} style={copyStyle}>
+        {params.text.subtitle ? (
+          <span
+            className={surface("corner-preview-subtitle")}
+            style={{ color: textColors.subtitle, fontSize: `${subtitlePx}px` }}
+          >
+            {params.text.subtitle.slice(0, 40)}
+          </span>
+        ) : null}
+        <span
+          className={surface("corner-preview-title")}
+          style={{
+            color: textColors.title,
+            fontSize: `${titlePx}px`,
+            marginTop: params.text.subtitle ? `${subtitlePx * 0.55}px` : 0
+          }}
+        >
+          {params.text.title.slice(0, 64)}
+        </span>
       </div>
     </div>
   );
@@ -645,7 +753,7 @@ function GridCardPreview({
   const titleCell = cells[8];
   const lineColor = getGridLineColor(gridFrame.lineTone);
   const titleColor = getGridTitleColor(gridFrame.lineTone);
-  const titleFontSize = Math.min(cssPx(28, refWidth), Math.max(cssPx(14, refWidth), refWidth * 0.045));
+  const titleFontSize = cssPx(gridFrame.titleSize, refWidth);
   const stageStyle =
     variant === "stage"
       ? {
@@ -756,7 +864,7 @@ function GridCardPreview({
           width: `${titleCell.width}%`
         }}
       >
-        {params.text.title.slice(0, 10)}
+        {params.text.title.slice(0, 20)}
       </p>
     </div>
   );
@@ -786,6 +894,11 @@ function FlutedCardPreview({
   const measuredWidth = useElementWidth(rootRef);
   const refWidth = measuredWidth || 360;
   const frame = clampFlutedFrame(flutedFrame);
+  const [contentRatio, setContentRatio] = useState(ratioNumber);
+
+  useEffect(() => {
+    setContentRatio(ratioNumber);
+  }, [ratioNumber]);
 
   useEffect(() => {
     if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
@@ -851,6 +964,9 @@ function FlutedCardPreview({
       const context = canvas.getContext("2d");
       context?.clearRect(0, 0, canvas.width, canvas.height);
       context?.drawImage(rendered, 0, 0);
+      if (!cancelled) {
+        setContentRatio(rendered.width / Math.max(rendered.height, 1));
+      }
     }
 
     void renderPreview().catch((error) => {
@@ -869,12 +985,12 @@ function FlutedCardPreview({
         video.load();
       }
     };
-  }, [flutedFrame, mediaType, mediaUrl, params, refWidth]);
+  }, [flutedFrame, mediaType, mediaUrl, params, refWidth, ratioNumber, variant]);
 
   const stageStyle =
     variant === "stage"
       ? {
-          ...getStagePreviewStyle(ratio, ratioNumber),
+          ...getStagePreviewStyle(String(contentRatio), contentRatio),
           background: "transparent"
         }
       : variant === "hero"
@@ -923,6 +1039,11 @@ function SwatchCardPreview({
   const measuredWidth = useElementWidth(rootRef);
   const refWidth = measuredWidth || 360;
   const frame = clampSwatchFrame(swatchFrame);
+  const [contentRatio, setContentRatio] = useState(ratioNumber);
+
+  useEffect(() => {
+    setContentRatio(ratioNumber);
+  }, [ratioNumber]);
 
   useEffect(() => {
     if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
@@ -988,6 +1109,9 @@ function SwatchCardPreview({
       const context = canvas.getContext("2d");
       context?.clearRect(0, 0, canvas.width, canvas.height);
       context?.drawImage(rendered, 0, 0);
+      if (!cancelled) {
+        setContentRatio(rendered.width / Math.max(rendered.height, 1));
+      }
     }
 
     void renderPreview().catch((error) => {
@@ -1006,12 +1130,12 @@ function SwatchCardPreview({
         video.load();
       }
     };
-  }, [swatchFrame, mediaType, mediaUrl, params, refWidth]);
+  }, [swatchFrame, mediaType, mediaUrl, params, refWidth, ratioNumber, variant]);
 
   const stageStyle =
     variant === "stage"
       ? {
-          ...getStagePreviewStyle(ratio, ratioNumber),
+          ...getStagePreviewStyle(String(contentRatio), contentRatio),
           background: "transparent"
         }
       : variant === "hero"
@@ -1173,6 +1297,205 @@ function DotCardPreview({
   );
 }
 
+type PrintCardPreviewProps = {
+  printFrame: PrintFrameConfig;
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+};
+
+function PrintCardPreview({
+  printFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant
+}: PrintCardPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  // 取整，避免 ResizeObserver 亚像素抖动反复重绘
+  const refWidth = Math.max(1, Math.round(measuredWidth || 360));
+  const frame = clampPrintFrame(printFrame);
+  const [contentRatio, setContentRatio] = useState(ratioNumber);
+  const mediaCacheRef = useRef<{
+    key: string;
+    source: CanvasImageSource;
+    width: number;
+    height: number;
+    video?: HTMLVideoElement;
+  } | null>(null);
+
+  useEffect(() => {
+    setContentRatio((prev) => (Math.abs(prev - ratioNumber) > 0.002 ? ratioNumber : prev));
+  }, [ratioNumber]);
+
+  useEffect(() => {
+    return () => {
+      const cached = mediaCacheRef.current;
+      if (cached?.video) {
+        cached.video.pause();
+        cached.video.removeAttribute("src");
+        cached.video.load();
+      }
+      mediaCacheRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mediaUrl || !canvasRef.current || refWidth <= 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadMedia(sourceUrl: string) {
+      const cacheKey = `${mediaType}|${sourceUrl}`;
+      const cached = mediaCacheRef.current;
+      if (cached?.key === cacheKey) {
+        return cached;
+      }
+
+      if (cached?.video) {
+        cached.video.pause();
+        cached.video.removeAttribute("src");
+        cached.video.load();
+      }
+
+      if (mediaType === "video") {
+        const video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.src = sourceUrl;
+
+        await new Promise<void>((resolve, reject) => {
+          video.onloadeddata = () => resolve();
+          video.onerror = () => reject(new Error("无法加载视频预览。"));
+        });
+
+        video.currentTime = 0;
+        await new Promise<void>((resolve) => {
+          video.onseeked = () => resolve();
+        });
+
+        const next = {
+          key: cacheKey,
+          source: video as CanvasImageSource,
+          width: video.videoWidth,
+          height: video.videoHeight,
+          video
+        };
+        mediaCacheRef.current = next;
+        return next;
+      }
+
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("无法加载图片预览。"));
+        image.src = sourceUrl;
+      });
+      const next = {
+        key: cacheKey,
+        source: image as CanvasImageSource,
+        width: image.naturalWidth,
+        height: image.naturalHeight
+      };
+      mediaCacheRef.current = next;
+      return next;
+    }
+
+    async function renderPreview() {
+      const sourceUrl = mediaUrl;
+      if (!sourceUrl) {
+        return;
+      }
+
+      const loaded = await loadMedia(sourceUrl);
+      if (cancelled || !canvasRef.current) {
+        return;
+      }
+
+      const media = { source: loaded.source, width: loaded.width, height: loaded.height };
+      const ratioNumberResolved =
+        variant === "hero" ? ratioNumber : resolvePrintRatioNumber(frame, loaded.width, loaded.height);
+      const base = resolveExportDimensions(ratioNumberResolved, media, 1);
+      const scale = refWidth / base.width;
+      const rendered = renderPrintFrame({ ...params, printFrame: frame }, media, scale, {
+        cacheKey: sourceUrl
+      });
+      const canvas = canvasRef.current;
+      canvas.width = rendered.width;
+      canvas.height = rendered.height;
+      const context = canvas.getContext("2d");
+      context?.clearRect(0, 0, canvas.width, canvas.height);
+      context?.drawImage(rendered, 0, 0);
+      if (!cancelled) {
+        const nextRatio = rendered.width / Math.max(rendered.height, 1);
+        // 避免 contentRatio → 容器尺寸 → refWidth 反馈环导致网点不停重算
+        setContentRatio((prev) => (Math.abs(prev - nextRatio) > 0.002 ? nextRatio : prev));
+      }
+    }
+
+    void renderPreview().catch((error) => {
+      console.error("网点预览渲染失败:", error);
+      if (!cancelled && canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
+        context?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // 只依赖会影响画面的字段；params 整体引用变化不应触发重绘
+  }, [
+    frame.seed,
+    frame.canvasRatio,
+    frame.windowMargin,
+    frame.innerRadius,
+    frame.borderWidth,
+    frame.backingColor,
+    mediaType,
+    mediaUrl,
+    refWidth,
+    ratioNumber,
+    variant
+  ]);
+
+  const stageStyle =
+    variant === "stage"
+      ? {
+          ...getStagePreviewStyle(String(contentRatio), contentRatio),
+          background: "transparent"
+        }
+      : variant === "hero"
+        ? {
+            background: "transparent",
+            height: "100%",
+            width: "100%"
+          }
+        : {
+            aspectRatio: ratio,
+            background: "transparent"
+          };
+
+  return (
+    <div
+      ref={rootRef}
+      className={surface(`card-preview card-preview-${variant} card-preview-print`)}
+      style={stageStyle}
+    >
+      <canvas className="print-preview-canvas" ref={canvasRef} />
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -1189,19 +1512,23 @@ export function CardPreview({
   const glassFrame = template?.family === "glass-frame" ? params.glassFrame : undefined;
   const glassSillFrame = template?.family === "glass-sill-frame" ? params.glassSillFrame : undefined;
   const bandFrame = template?.family === "band-frame" ? params.bandFrame : undefined;
+  const cornerFrame = template?.family === "corner-frame" ? params.cornerFrame : undefined;
   const flutedFrame = template?.family === "fluted-frame" ? params.flutedFrame : undefined;
   const swatchFrame = template?.family === "swatch-frame" ? params.swatchFrame : undefined;
   const dotFrame = template?.family === "dot-frame" ? params.dotFrame : undefined;
-  const imageRatio = useImageAspectRatio(mediaUrl);
+  const printFrame = template?.family === "print-frame" ? params.printFrame : undefined;
+  const imageRatio = useImageAspectRatio(mediaUrl, mediaType);
   const frameCanvasRatio =
     refinedFrame?.canvasRatio ??
     gridFrame?.canvasRatio ??
     glassFrame?.canvasRatio ??
     glassSillFrame?.canvasRatio ??
     bandFrame?.canvasRatio ??
+    cornerFrame?.canvasRatio ??
     flutedFrame?.canvasRatio ??
     swatchFrame?.canvasRatio ??
-    dotFrame?.canvasRatio;
+    dotFrame?.canvasRatio ??
+    printFrame?.canvasRatio;
   const { ratio, ratioNumber } =
     variant === "hero"
       ? { ratio: HERO_PREVIEW_RATIO, ratioNumber: HERO_PREVIEW_RATIO_NUMBER }
@@ -1311,6 +1638,20 @@ export function CardPreview({
     );
   }
 
+  if (framed && printFrame) {
+    return (
+      <PrintCardPreview
+        printFrame={printFrame}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        variant={variant}
+      />
+    );
+  }
+
   if (framed && dotFrame) {
     return (
       <DotCardPreview
@@ -1329,6 +1670,20 @@ export function CardPreview({
     return (
       <BandCardPreview
         bandFrame={bandFrame}
+        mediaName={mediaName}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        renderMedia={renderMedia}
+        variant={variant}
+      />
+    );
+  }
+
+  if (framed && cornerFrame) {
+    return (
+      <CornerCardPreview
+        cornerFrame={cornerFrame}
         mediaName={mediaName}
         params={params}
         ratio={ratio}

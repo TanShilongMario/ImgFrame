@@ -88,8 +88,17 @@ export function GridFrameControls({
           </button>
         </div>
       </div>
+      <RangeControl
+        label="标题字号"
+        max={GRID_LINE_LIMITS.titleSize.max}
+        min={GRID_LINE_LIMITS.titleSize.min}
+        step={1}
+        suffix="px"
+        value={frame.titleSize}
+        onChange={(titleSize) => onChangeFrame({ ...frame, titleSize })}
+      />
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="标题（右下格）" maxLength={10} value={title} onChange={onChangeTitle} />
+      <TextAreaControl label="标题（右下格）" maxLength={20} value={title} onChange={onChangeTitle} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { createId } from "../utils/id";
 import type { GridFrameConfig, MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
-import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeDotFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizeSwatchFrame } from "../templates/randomize";
+import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeCornerFrame, normalizeDotFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizePrintFrame, normalizeSwatchFrame } from "../templates/randomize";
 import { getTemplateById } from "../templates/registry";
 import { normalizeTextFont } from "../templates/fonts";
 
@@ -16,10 +16,10 @@ export function normalizeProject(project: Project): Project {
   }
 
   const refined = templateParams.refinedFrame as RefinedFrameConfig | undefined;
-  if (refined && (refined as RefinedFrameConfig & { canvasRatio?: unknown }).canvasRatio === undefined) {
+  if (refined && ((refined as RefinedFrameConfig & { canvasRatio?: unknown }).canvasRatio === undefined || refined.creditSize === undefined)) {
     templateParams = {
       ...templateParams,
-      refinedFrame: { ...refined, canvasRatio: "auto" }
+      refinedFrame: { ...refined, canvasRatio: refined.canvasRatio ?? "auto", creditSize: refined.creditSize ?? 14 }
     };
   }
 
@@ -55,6 +55,14 @@ export function normalizeProject(project: Project): Project {
     };
   }
 
+  const cornerFrame = normalizeCornerFrame(templateParams.cornerFrame);
+  if (cornerFrame) {
+    templateParams = {
+      ...templateParams,
+      cornerFrame
+    };
+  }
+
   const flutedFrame = normalizeFlutedFrame(templateParams.flutedFrame);
   if (flutedFrame) {
     templateParams = {
@@ -76,6 +84,14 @@ export function normalizeProject(project: Project): Project {
     templateParams = {
       ...templateParams,
       dotFrame
+    };
+  }
+
+  const printFrame = normalizePrintFrame(templateParams.printFrame);
+  if (printFrame) {
+    templateParams = {
+      ...templateParams,
+      printFrame
     };
   }
 

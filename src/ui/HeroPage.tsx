@@ -40,7 +40,7 @@ export function HeroPage({ isBusy, onMagicFrame, onScrollDown }: HeroPageProps) 
             <Upload aria-hidden="true" className="hero-upload-icon" size={16} strokeWidth={2.4} />
             <span>Try from a Photo or Video</span>
           </button>
-          <p className="hero-upload-hint">JPG · PNG · MP4 · MOV — drag anywhere to upload</p>
+          <p className="hero-upload-hint">JPG · PNG · GIF · MP4 · MOV — drag anywhere to upload</p>
         </div>
       </div>
 

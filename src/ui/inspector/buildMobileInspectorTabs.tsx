@@ -1,8 +1,12 @@
 import { Dices } from "lucide-react";
 import type {
   BandFrameConfig,
+  CornerFrameConfig,
   DotFrameConfig,
   FlutedFrameConfig,
+  PrintFrameConfig,
+  PrintPaperColor,
+  GlassTextTone,
   SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
@@ -10,6 +14,8 @@ import type {
   RefinedFrameConfig
 } from "../../types";
 import { BAND_FRAME_LIMITS } from "../../templates/bandFrame";
+import { CORNER_FRAME_LIMITS, CORNER_TEXT_ANCHOR_OPTIONS } from "../../templates/cornerFrame";
+import { PRINT_FRAME_LIMITS, PRINT_PAPER_COLORS } from "../../templates/printFrame";
 import { DOT_FRAME_LIMITS } from "../../templates/dotFrame";
 import { FLUTED_FRAME_LIMITS } from "../../templates/flutedFrame";
 import { SWATCH_FRAME_LIMITS } from "../../templates/swatchFrame";
@@ -130,9 +136,14 @@ export function buildRefinedMobileTabs({
       content: <FontControl value={font} onChange={onChangeFont} />
     },
     {
+      id: "credit-size",
+      label: "字号",
+      content: <RangeControl label="署名字号" max={24} min={9} step={1} suffix="px" value={frame.creditSize} onChange={(creditSize) => onChangeFrame({ ...frame, creditSize })} />
+    },
+    {
       id: "credit",
       label: "署名",
-      content: <TextAreaControl label="文字内容" maxLength={48} value={credit} onChange={onChangeCredit} />
+      content: <TextAreaControl label="文字内容" maxLength={72} value={credit} onChange={onChangeCredit} />
     }
   ];
 }
@@ -261,9 +272,14 @@ export function buildGridMobileTabs({
       content: <FontControl value={font} onChange={onChangeFont} />
     },
     {
+      id: "title-size",
+      label: "字号",
+      content: <RangeControl label="标题字号" max={GRID_LINE_LIMITS.titleSize.max} min={GRID_LINE_LIMITS.titleSize.min} step={1} suffix="px" value={frame.titleSize} onChange={(titleSize) => onChangeFrame({ ...frame, titleSize })} />
+    },
+    {
       id: "title",
       label: "标题",
-      content: <TextAreaControl label="标题（右下格）" maxLength={10} value={title} onChange={onChangeTitle} />
+      content: <TextAreaControl label="标题（右下格）" maxLength={20} value={title} onChange={onChangeTitle} />
     }
   ];
 }
@@ -386,15 +402,25 @@ export function buildGlassMobileTabs({
       content: <FontControl value={font} onChange={onChangeFont} />
     },
     {
+      id: "title-size",
+      label: "主字号",
+      content: <RangeControl label="标题字号" max={GLASS_FRAME_LIMITS.titleSize.max} min={GLASS_FRAME_LIMITS.titleSize.min} step={1} suffix="px" value={frame.titleSize} onChange={(titleSize) => onChangeFrame({ ...frame, titleSize })} />
+    },
+    {
+      id: "subtitle-size",
+      label: "副字号",
+      content: <RangeControl label="副标题字号" max={GLASS_FRAME_LIMITS.subtitleSize.max} min={GLASS_FRAME_LIMITS.subtitleSize.min} step={1} suffix="px" value={frame.subtitleSize} onChange={(subtitleSize) => onChangeFrame({ ...frame, subtitleSize })} />
+    },
+    {
       id: "title",
       label: "标题",
-      content: <TextAreaControl label="标题" maxLength={24} value={title} onChange={(value) => onChangeText("title", value)} />
+      content: <TextAreaControl label="标题" maxLength={40} value={title} onChange={(value) => onChangeText("title", value)} />
     },
     {
       id: "subtitle",
       label: "副标题",
       content: (
-        <TextAreaControl label="副标题" maxLength={48} value={subtitle} onChange={(value) => onChangeText("subtitle", value)} />
+        <TextAreaControl label="副标题" maxLength={72} value={subtitle} onChange={(value) => onChangeText("subtitle", value)} />
       )
     }
   ];
@@ -516,9 +542,14 @@ export function buildGlassSillMobileTabs({
       content: <FontControl value={font} onChange={onChangeFont} />
     },
     {
+      id: "caption-size",
+      label: "字号",
+      content: <RangeControl label="文字字号" max={GLASS_SILL_FRAME_LIMITS.captionSize.max} min={GLASS_SILL_FRAME_LIMITS.captionSize.min} step={1} suffix="px" value={frame.captionSize} onChange={(captionSize) => onChangeFrame({ ...frame, captionSize })} />
+    },
+    {
       id: "caption",
       label: "文字",
-      content: <TextAreaControl label="底边文字" maxLength={40} value={caption} onChange={onChangeCaption} />
+      content: <TextAreaControl label="底边文字" maxLength={64} value={caption} onChange={onChangeCaption} />
     }
   ];
 }
@@ -640,13 +671,179 @@ export function buildBandMobileTabs({
     {
       id: "title",
       label: "标题",
-      content: <TextAreaControl label="标题句" maxLength={40} value={title} onChange={(value) => onChangeText("title", value)} />
+      content: <TextAreaControl label="标题句" maxLength={64} value={title} onChange={(value) => onChangeText("title", value)} />
     },
     {
       id: "subtitle",
       label: "副标题",
       content: (
-        <TextAreaControl label="副标题" maxLength={24} value={subtitle} onChange={(value) => onChangeText("subtitle", value)} />
+        <TextAreaControl label="副标题" maxLength={40} value={subtitle} onChange={(value) => onChangeText("subtitle", value)} />
+      )
+    }
+  ];
+}
+
+const CORNER_TEXT_TONE_OPTIONS: SegmentedOption<GlassTextTone>[] = [
+  { value: "white", label: "白" },
+  { value: "black", label: "黑" },
+  { value: "gray", label: "灰" }
+];
+
+export function buildCornerMobileTabs({
+  frame,
+  title,
+  subtitle,
+  font,
+  onChangeFrame,
+  onChangeText,
+  onChangeFont,
+  onApplySystemBacking
+}: {
+  frame: CornerFrameConfig;
+  title: string;
+  subtitle: string;
+  font: TextFontId;
+  onChangeFrame: (frame: CornerFrameConfig) => void;
+  onChangeText: (field: "title" | "subtitle", value: string) => void;
+  onChangeFont: (font: TextFontId) => void;
+  onApplySystemBacking: () => void;
+}): MobileInspectorTab[] {
+  return [
+    {
+      id: "ratio",
+      label: "比例",
+      content: <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} />
+    },
+    {
+      id: "margin",
+      label: "外边缘",
+      content: (
+        <RangeControl
+          label="外边缘"
+          max={CORNER_FRAME_LIMITS.outerMargin.max}
+          min={CORNER_FRAME_LIMITS.outerMargin.min}
+          step={0.5}
+          suffix="%"
+          value={frame.outerMargin}
+          onChange={(value) => onChangeFrame({ ...frame, outerMargin: value })}
+        />
+      )
+    },
+    {
+      id: "radius",
+      label: "圆角",
+      content: (
+        <RangeControl
+          label="图片圆角"
+          max={CORNER_FRAME_LIMITS.mediaRadius.max}
+          min={CORNER_FRAME_LIMITS.mediaRadius.min}
+          step={2}
+          suffix="px"
+          value={frame.mediaRadius}
+          onChange={(value) => onChangeFrame({ ...frame, mediaRadius: value })}
+        />
+      )
+    },
+    {
+      id: "border",
+      label: "描边",
+      content: (
+        <RangeControl
+          label="描边宽度"
+          max={CORNER_FRAME_LIMITS.borderWidth.max}
+          min={CORNER_FRAME_LIMITS.borderWidth.min}
+          step={1}
+          suffix="px"
+          value={frame.borderWidth}
+          onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
+        />
+      )
+    },
+    {
+      id: "corner",
+      label: "位置",
+      content: (
+        <div className="field field-control">
+          <span>文字位置</span>
+          <SegmentedControl
+            options={CORNER_TEXT_ANCHOR_OPTIONS}
+            value={frame.textCorner}
+            onChange={(textCorner) => onChangeFrame({ ...frame, textCorner })}
+          />
+        </div>
+      )
+    },
+    {
+      id: "tone",
+      label: "颜色",
+      content: (
+        <div className="field field-control">
+          <span>文字颜色</span>
+          <SegmentedControl
+            options={CORNER_TEXT_TONE_OPTIONS}
+            value={frame.textTone}
+            onChange={(textTone) => onChangeFrame({ ...frame, textTone })}
+          />
+        </div>
+      )
+    },
+    {
+      id: "subtitle-size",
+      label: "副字号",
+      content: (
+        <RangeControl
+          label="副标题字号"
+          max={CORNER_FRAME_LIMITS.subtitleSize.max}
+          min={CORNER_FRAME_LIMITS.subtitleSize.min}
+          step={1}
+          suffix="px"
+          value={frame.subtitleSize}
+          onChange={(value) => onChangeFrame({ ...frame, subtitleSize: value })}
+        />
+      )
+    },
+    {
+      id: "title-size",
+      label: "主字号",
+      content: (
+        <RangeControl
+          label="标题字号"
+          max={CORNER_FRAME_LIMITS.titleSize.max}
+          min={CORNER_FRAME_LIMITS.titleSize.min}
+          step={1}
+          suffix="px"
+          value={frame.titleSize}
+          onChange={(value) => onChangeFrame({ ...frame, titleSize: value })}
+        />
+      )
+    },
+    {
+      id: "backing",
+      label: "衬底",
+      content: (
+        <PresetColorControl
+          label="衬底颜色"
+          value={frame.backingColor}
+          onPick={(choice) => onChangeFrame({ ...frame, backingColor: choice })}
+          onSystem={onApplySystemBacking}
+        />
+      )
+    },
+    {
+      id: "font",
+      label: "字体",
+      content: <FontControl value={font} onChange={onChangeFont} />
+    },
+    {
+      id: "title",
+      label: "标题",
+      content: <TextAreaControl label="标题句" maxLength={64} value={title} onChange={(value) => onChangeText("title", value)} />
+    },
+    {
+      id: "subtitle",
+      label: "副标题",
+      content: (
+        <TextAreaControl label="副标题" maxLength={40} value={subtitle} onChange={(value) => onChangeText("subtitle", value)} />
       )
     }
   ];
@@ -907,6 +1104,116 @@ export function buildDotMobileTabs({
               aria-label="重掷波点参数"
               className="seed-dice"
               title="重掷波点参数"
+              type="button"
+              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
+            >
+              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+      )
+    }
+  ];
+}
+
+export function buildPrintMobileTabs({
+  frame,
+  onChangeFrame,
+  onChangeSeed
+}: {
+  frame: PrintFrameConfig;
+  onChangeFrame: (frame: PrintFrameConfig) => void;
+  onChangeSeed: (seed: number) => void;
+}): MobileInspectorTab[] {
+  return [
+    {
+      id: "ratio",
+      label: "比例",
+      content: <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} />
+    },
+    {
+      id: "margin",
+      label: "边距",
+      content: (
+        <RangeControl
+          label="边缘间距"
+          max={PRINT_FRAME_LIMITS.windowMargin.max}
+          min={PRINT_FRAME_LIMITS.windowMargin.min}
+          step={1}
+          suffix="%"
+          value={frame.windowMargin}
+          onChange={(value) => onChangeFrame({ ...frame, windowMargin: value })}
+        />
+      )
+    },
+    {
+      id: "inner-radius",
+      label: "圆角",
+      content: (
+        <RangeControl
+          label="中央圆角"
+          max={PRINT_FRAME_LIMITS.innerRadius.max}
+          min={PRINT_FRAME_LIMITS.innerRadius.min}
+          step={2}
+          suffix="px"
+          value={frame.innerRadius}
+          onChange={(value) => onChangeFrame({ ...frame, innerRadius: value })}
+        />
+      )
+    },
+    {
+      id: "border",
+      label: "描边",
+      content: (
+        <RangeControl
+          label="描边宽度"
+          max={PRINT_FRAME_LIMITS.borderWidth.max}
+          min={PRINT_FRAME_LIMITS.borderWidth.min}
+          step={1}
+          suffix="px"
+          value={frame.borderWidth}
+          onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
+        />
+      )
+    },
+    {
+      id: "paper",
+      label: "纸张",
+      content: (
+        <div className="field field-control band-color-field">
+          <span>衬底纸张</span>
+          <div className="band-color-control">
+            <div className="segmented-control segmented-control-colors band-color-row">
+              {PRINT_PAPER_COLORS.map((option) => (
+                <button
+                  key={option.id}
+                  aria-label={option.label}
+                  aria-pressed={frame.backingColor === option.id}
+                  className={`band-color-swatch${frame.backingColor === option.id ? " is-active" : ""}`}
+                  title={option.label}
+                  type="button"
+                  onClick={() => onChangeFrame({ ...frame, backingColor: option.id as PrintPaperColor })}
+                >
+                  <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "seed",
+      label: "网点",
+      content: (
+        <div className="field field-control seed-control">
+          <span>随机网点</span>
+          <div className="seed-value-row">
+            <strong>{frame.seed}</strong>
+            <button
+              aria-label="重掷网点参数"
+              className="seed-dice"
+              title="重掷网点参数"
               type="button"
               onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
             >

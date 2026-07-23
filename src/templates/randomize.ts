@@ -1,7 +1,9 @@
-import type { BandColorChoice, BandFrameConfig, CanvasRatio, DotFrameConfig, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GridFrameConfig, SwatchFrameConfig, TemplateParams } from "../types";
+import type { BandColorChoice, BandFrameConfig, CanvasRatio, CornerFrameConfig, CornerTextAnchor, DotFrameConfig, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GlassTextTone, GridFrameConfig, PrintFrameConfig, SwatchFrameConfig, TemplateParams } from "../types";
 import { clampDotFrame } from "./dotFrame";
+import { clampPrintFrame } from "./printFrame";
 import { clampFlutedFrame } from "./flutedFrame";
 import { clampSwatchFrame } from "./swatchFrame";
+import { clampCornerFrame } from "./cornerFrame";
 import { getTemplateById, templateRegistry, type TemplateDefinition } from "./registry";
 import { clampGlassFrame } from "./glassFrame";
 import { clampGlassSillFrame } from "./glassSillFrame";
@@ -60,6 +62,22 @@ function cloneParams(params: TemplateParams): TemplateParams {
 }
 
 export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
+  if (base.printFrame) {
+    const paperChoices = ["cream", "sand", "warm", "parchment", "newsprint"] as const;
+
+    return {
+      ...cloneParams(base),
+      printFrame: clampPrintFrame({
+        ...base.printFrame,
+        windowMargin: range(12, 22),
+        innerRadius: range(12, 32),
+        borderWidth: range(3, 6),
+        seed: Math.floor(Math.random() * 100000),
+        backingColor: pick([...paperChoices])
+      })
+    };
+  }
+
   if (base.dotFrame) {
     return {
       ...cloneParams(base),
@@ -105,7 +123,7 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
       ...cloneParams(base),
       text: {
         ...base.text,
-        title: pick(glassSillCaptions).slice(0, 40),
+        title: pick(glassSillCaptions).slice(0, 64),
         subtitle: ""
       },
       glassSillFrame: clampGlassSillFrame({
@@ -115,6 +133,7 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         blur: range(24, 40),
         outerRadius: range(44, 72),
         textTone: pick(["white", "black", "gray"] as const),
+        captionSize: range(14, 24),
         backingColor: pick(["cream", "sand", "mist", "lilac", "sage", "system"] as const),
         systemBackingHex: undefined,
         causticHex: undefined
@@ -127,8 +146,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
       ...cloneParams(base),
       text: {
         ...base.text,
-        title: pick(glassTitles).slice(0, 24),
-        subtitle: pick(glassSubtitles).slice(0, 48)
+        title: pick(glassTitles).slice(0, 40),
+        subtitle: pick(glassSubtitles).slice(0, 72)
       },
       glassFrame: clampGlassFrame({
         ...base.glassFrame,
@@ -137,6 +156,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         blur: range(20, 40),
         outerRadius: range(48, 80),
         textTone: pick(["white", "black", "gray"] as const),
+        titleSize: range(22, 36),
+        subtitleSize: range(11, 20),
         backingColor: pick(["cream", "sand", "mist", "lilac", "sage", "system"] as const),
         systemBackingHex: undefined
       })
@@ -151,8 +172,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
       ...cloneParams(base),
       text: {
         ...base.text,
-        title: pick(bandTitles).slice(0, 40),
-        subtitle: pick(bandSubtitles).slice(0, 24)
+        title: pick(bandTitles).slice(0, 64),
+        subtitle: pick(bandSubtitles).slice(0, 40)
       },
       bandFrame: clampBandFrame({
         ...base.bandFrame,
@@ -168,13 +189,39 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
     };
   }
 
+  if (base.cornerFrame) {
+    const fixedColors: BandColorChoice[] = ["cream", "sand", "mist", "lilac", "sage"];
+    const corners: CornerTextAnchor[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
+    const tones: GlassTextTone[] = ["white", "black", "gray"];
+    return {
+      ...cloneParams(base),
+      text: {
+        ...base.text,
+        title: pick(bandTitles).slice(0, 64),
+        subtitle: pick(bandSubtitles).slice(0, 40)
+      },
+      cornerFrame: clampCornerFrame({
+        ...base.cornerFrame,
+        outerMargin: range(8, 14),
+        mediaRadius: range(8, 28),
+        borderWidth: range(2, 6),
+        subtitleSize: range(12, 18),
+        titleSize: range(22, 34),
+        textCorner: pick(corners),
+        textTone: pick(tones),
+        backingColor: pick(fixedColors),
+        systemBackingHex: undefined
+      })
+    };
+  }
+
   if (base.gridFrame) {
     const seed = range(1, 99999);
     return {
       ...cloneParams(base),
       text: {
         ...base.text,
-        title: pick(gridTitles).slice(0, 10)
+        title: pick(gridTitles).slice(0, 20)
       },
       gridFrame: withDerivedGridEffects({
         ...base.gridFrame,
@@ -184,6 +231,7 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         lineY1: range(26, 42),
         lineY2: range(68, 84),
         seed,
+        titleSize: range(20, 36),
         cellEffects: deriveCellEffectsFromSeed(seed)
       })
     };
@@ -201,7 +249,8 @@ export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
         cropWidth: range(24, 42),
         cropHeight: range(0, 28),
         backgroundBlur: range(18, 46),
-        gradientTone: pick(["white", "black"] as const)
+        gradientTone: pick(["white", "black"] as const),
+        creditSize: range(10, 18)
       }
     };
   }
@@ -290,6 +339,14 @@ export function normalizeSwatchFrame(frame?: SwatchFrameConfig): SwatchFrameConf
   return clampSwatchFrame(frame);
 }
 
+export function normalizePrintFrame(frame?: PrintFrameConfig): PrintFrameConfig | undefined {
+  if (!frame) {
+    return undefined;
+  }
+
+  return clampPrintFrame(frame);
+}
+
 export function normalizeDotFrame(frame?: DotFrameConfig): DotFrameConfig | undefined {
   if (!frame) {
     return undefined;
@@ -320,6 +377,14 @@ export function normalizeBandFrame(frame?: BandFrameConfig): BandFrameConfig | u
   }
 
   return clampBandFrame(frame);
+}
+
+export function normalizeCornerFrame(frame?: CornerFrameConfig): CornerFrameConfig | undefined {
+  if (!frame) {
+    return undefined;
+  }
+
+  return clampCornerFrame(frame);
 }
 
 export function normalizeGridFrame(frame?: GridFrameConfig): GridFrameConfig | undefined {

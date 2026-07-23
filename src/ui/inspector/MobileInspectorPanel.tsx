@@ -4,6 +4,8 @@ import type { Project } from "../../types";
 import type { TextFontId } from "../../templates/fonts";
 import {
   buildBandMobileTabs,
+  buildCornerMobileTabs,
+  buildPrintMobileTabs,
   buildDotMobileTabs,
   buildFlutedMobileTabs,
   buildSwatchMobileTabs,
@@ -15,8 +17,10 @@ import {
 import { MobileTabbedInspector } from "./MobileTabbedInspector";
 import type {
   BandFrameConfig,
+  CornerFrameConfig,
   DotFrameConfig,
   FlutedFrameConfig,
+  PrintFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
@@ -33,10 +37,13 @@ type MobileInspectorPanelProps = {
   onChangeGlassFrame: (frame: GlassFrameConfig) => void;
   onChangeGlassSillFrame: (frame: GlassSillFrameConfig) => void;
   onChangeBandFrame: (frame: BandFrameConfig) => void;
+  onChangeCornerFrame: (frame: CornerFrameConfig) => void;
   onChangeFlutedFrame: (frame: FlutedFrameConfig) => void;
   onChangeFlutedSeed: (seed: number) => void;
   onChangeSwatchFrame: (frame: SwatchFrameConfig) => void;
   onChangeSwatchSeed: (seed: number) => void;
+  onChangePrintFrame: (frame: PrintFrameConfig) => void;
+  onChangePrintSeed: (seed: number) => void;
   onChangeDotFrame: (frame: DotFrameConfig) => void;
   onChangeDotSeed: (seed: number) => void;
   onChangeTextField: (field: "title" | "subtitle" | "credit", value: string, maxLength: number) => void;
@@ -44,6 +51,7 @@ type MobileInspectorPanelProps = {
   onApplyGlassSystemBacking: () => void;
   onApplyGlassSillSystemBacking: () => void;
   onApplyBandSystemColor: (target: "band" | "backing") => void;
+  onApplyCornerSystemBacking: () => void;
 };
 
 export function MobileInspectorPanel({
@@ -55,17 +63,21 @@ export function MobileInspectorPanel({
   onChangeGlassFrame,
   onChangeGlassSillFrame,
   onChangeBandFrame,
+  onChangeCornerFrame,
   onChangeFlutedFrame,
   onChangeFlutedSeed,
   onChangeSwatchFrame,
   onChangeSwatchSeed,
+  onChangePrintFrame,
+  onChangePrintSeed,
   onChangeDotFrame,
   onChangeDotSeed,
   onChangeTextField,
   onChangeFont,
   onApplyGlassSystemBacking,
   onApplyGlassSillSystemBacking,
-  onApplyBandSystemColor
+  onApplyBandSystemColor,
+  onApplyCornerSystemBacking
 }: MobileInspectorPanelProps) {
   const activeTemplate = getTemplateById(project.templateId);
   const refinedFrame =
@@ -75,8 +87,10 @@ export function MobileInspectorPanel({
   const glassSillFrame =
     activeTemplate.family === "glass-sill-frame" ? project.templateParams.glassSillFrame : undefined;
   const bandFrame = activeTemplate.family === "band-frame" ? project.templateParams.bandFrame : undefined;
+  const cornerFrame = activeTemplate.family === "corner-frame" ? project.templateParams.cornerFrame : undefined;
   const flutedFrame = activeTemplate.family === "fluted-frame" ? project.templateParams.flutedFrame : undefined;
   const swatchFrame = activeTemplate.family === "swatch-frame" ? project.templateParams.swatchFrame : undefined;
+  const printFrame = activeTemplate.family === "print-frame" ? project.templateParams.printFrame : undefined;
   const dotFrame = activeTemplate.family === "dot-frame" ? project.templateParams.dotFrame : undefined;
 
   const tabs = useMemo(() => {
@@ -86,7 +100,7 @@ export function MobileInspectorPanel({
         credit: project.templateParams.text.credit ?? "",
         font: activeFont,
         onChangeFrame: onChangeRefinedFrame,
-        onChangeCredit: (value) => onChangeTextField("credit", value, 48),
+        onChangeCredit: (value) => onChangeTextField("credit", value, 72),
         onChangeFont
       });
     }
@@ -98,7 +112,7 @@ export function MobileInspectorPanel({
         font: activeFont,
         onChangeFrame: onChangeGridFrame,
         onChangeSeed: onChangeGridSeed,
-        onChangeTitle: (value) => onChangeTextField("title", value, 10),
+        onChangeTitle: (value) => onChangeTextField("title", value, 20),
         onChangeFont
       });
     }
@@ -110,7 +124,7 @@ export function MobileInspectorPanel({
         subtitle: project.templateParams.text.subtitle ?? "",
         font: activeFont,
         onChangeFrame: onChangeGlassFrame,
-        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 24 : 48),
+        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 40 : 72),
         onChangeFont,
         onApplySystemBacking: onApplyGlassSystemBacking
       });
@@ -122,7 +136,7 @@ export function MobileInspectorPanel({
         caption: project.templateParams.text.title ?? "",
         font: activeFont,
         onChangeFrame: onChangeGlassSillFrame,
-        onChangeCaption: (value) => onChangeTextField("title", value, 40),
+        onChangeCaption: (value) => onChangeTextField("title", value, 64),
         onChangeFont,
         onApplySystemBacking: onApplyGlassSillSystemBacking
       });
@@ -135,9 +149,22 @@ export function MobileInspectorPanel({
         subtitle: project.templateParams.text.subtitle ?? "",
         font: activeFont,
         onChangeFrame: onChangeBandFrame,
-        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 40 : 24),
+        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 64 : 40),
         onChangeFont,
         onApplySystemColor: onApplyBandSystemColor
+      });
+    }
+
+    if (cornerFrame) {
+      return buildCornerMobileTabs({
+        frame: cornerFrame,
+        title: project.templateParams.text.title ?? "",
+        subtitle: project.templateParams.text.subtitle ?? "",
+        font: activeFont,
+        onChangeFrame: onChangeCornerFrame,
+        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 64 : 40),
+        onChangeFont,
+        onApplySystemBacking: onApplyCornerSystemBacking
       });
     }
 
@@ -157,6 +184,14 @@ export function MobileInspectorPanel({
       });
     }
 
+    if (printFrame) {
+      return buildPrintMobileTabs({
+        frame: printFrame,
+        onChangeFrame: onChangePrintFrame,
+        onChangeSeed: onChangePrintSeed
+      });
+    }
+
     if (dotFrame) {
       return buildDotMobileTabs({
         frame: dotFrame,
@@ -169,6 +204,8 @@ export function MobileInspectorPanel({
   }, [
     activeFont,
     bandFrame,
+    cornerFrame,
+    printFrame,
     dotFrame,
     flutedFrame,
     swatchFrame,
@@ -176,11 +213,15 @@ export function MobileInspectorPanel({
     glassSillFrame,
     gridFrame,
     onApplyBandSystemColor,
+    onApplyCornerSystemBacking,
     onApplyGlassSillSystemBacking,
     onApplyGlassSystemBacking,
     onChangeBandFrame,
+    onChangeCornerFrame,
     onChangeFlutedFrame,
     onChangeFlutedSeed,
+    onChangePrintFrame,
+    onChangePrintSeed,
     onChangeDotFrame,
     onChangeDotSeed,
     onChangeSwatchFrame,

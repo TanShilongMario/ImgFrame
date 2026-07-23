@@ -2,9 +2,11 @@ import { getTemplateById } from "../templates/registry";
 import type { Project } from "../types";
 import type { LoadedMedia } from "./canvasUtils";
 import { renderBandFrame } from "./renderBandFrame";
+import { renderCornerFrame } from "./renderCornerFrame";
 import { renderGlassFrame } from "./renderGlassFrame";
 import { renderGridFrame } from "./renderGridFrame";
 import { renderFlutedFrame } from "./renderFlutedFrame";
+import { renderPrintFrame } from "./renderPrintFrame";
 import { renderDotFrame } from "./renderDotFrame";
 import { renderSwatchFrame } from "./renderSwatchFrame";
 import { renderGlassSillFrame } from "./renderGlassSillFrame";
@@ -41,6 +43,10 @@ export function renderProjectFrame(
     return renderBandFrame(project.templateParams, media, scale);
   }
 
+  if (template.family === "corner-frame") {
+    return renderCornerFrame(project.templateParams, media, scale);
+  }
+
   if (template.family === "fluted-frame") {
     return renderFlutedFrame(project.templateParams, media, scale);
   }
@@ -51,6 +57,10 @@ export function renderProjectFrame(
 
   if (template.family === "dot-frame") {
     return renderDotFrame(project.templateParams, media, scale);
+  }
+
+  if (template.family === "print-frame") {
+    return renderPrintFrame(project.templateParams, media, scale);
   }
 
   return renderStandardFrame(project.templateParams, media, scale);

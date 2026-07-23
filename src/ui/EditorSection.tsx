@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getTemplateById } from "../templates/registry";
 import type {
   BandFrameConfig,
+  CornerFrameConfig,
   FlutedFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
@@ -10,6 +11,7 @@ import type {
   Project,
   RefinedFrameConfig,
   DotFrameConfig,
+  PrintFrameConfig,
   SwatchFrameConfig,
   TemplateParams
 } from "../types";
@@ -20,8 +22,10 @@ import {
   deriveGlassSillCausticColor
 } from "../templates/glassSillFrame";
 import { clampFlutedFrame } from "../templates/flutedFrame";
+import { clampPrintFrame } from "../templates/printFrame";
 import { clampDotFrame } from "../templates/dotFrame";
 import { clampSwatchFrame } from "../templates/swatchFrame";
+import { clampCornerFrame } from "../templates/cornerFrame";
 import { clampGridFrame, withDerivedGridEffects } from "../templates/gridFrame";
 import { clampBandFrame, deriveSystemColor, fallbackSystemColor, sampleAverageColorFromUrl } from "../templates/bandFrame";
 import { normalizeTextFont, type TextFontId } from "../templates/fonts";
@@ -32,15 +36,18 @@ import { StageActionButton } from "./components/StageActionButton";
 import { Sidebar } from "./components/Sidebar";
 import { Field } from "./inspector/controls";
 import { FlutedFrameControls } from "./inspector/FlutedFrameControls";
+import { PrintFrameControls } from "./inspector/PrintFrameControls";
 import { DotFrameControls } from "./inspector/DotFrameControls";
 import { SwatchFrameControls } from "./inspector/SwatchFrameControls";
 import { BandFrameControls } from "./inspector/BandFrameControls";
+import { CornerFrameControls } from "./inspector/CornerFrameControls";
 import { GlassFrameControls } from "./inspector/GlassFrameControls";
 import { GlassSillFrameControls } from "./inspector/GlassSillFrameControls";
 import { GridFrameControls } from "./inspector/GridFrameControls";
 import { RefinedFrameControls } from "./inspector/RefinedFrameControls";
 import { MobileInspectorPanel } from "./inspector/MobileInspectorPanel";
 import type { HeroUploadOptions } from "./HeroPage";
+import { isGifMedia } from "../media/decodeGif";
 
 type EditorSectionProps = {
   project: Project | null;
@@ -85,9 +92,11 @@ export function EditorSection({
   const glassSillFrame =
     activeTemplate?.family === "glass-sill-frame" ? project?.templateParams.glassSillFrame : undefined;
   const bandFrame = activeTemplate?.family === "band-frame" ? project?.templateParams.bandFrame : undefined;
+  const cornerFrame = activeTemplate?.family === "corner-frame" ? project?.templateParams.cornerFrame : undefined;
   const flutedFrame = activeTemplate?.family === "fluted-frame" ? project?.templateParams.flutedFrame : undefined;
   const swatchFrame = activeTemplate?.family === "swatch-frame" ? project?.templateParams.swatchFrame : undefined;
   const dotFrame = activeTemplate?.family === "dot-frame" ? project?.templateParams.dotFrame : undefined;
+  const printFrame = activeTemplate?.family === "print-frame" ? project?.templateParams.printFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
   const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
   const lastGlassSillSampleRef = useRef<{ mediaId?: string; backingHex?: string; causticHex?: string }>({});
@@ -312,6 +321,17 @@ export function EditorSection({
     });
   }
 
+  function updateCornerFrame(nextFrame: CornerFrameConfig) {
+    if (!project) {
+      return;
+    }
+
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      cornerFrame: clampCornerFrame(nextFrame)
+    });
+  }
+
   function updateFlutedFrame(nextFrame: FlutedFrameConfig) {
     if (!project) {
       return;
@@ -369,6 +389,25 @@ export function EditorSection({
     updateDotFrame({ ...dotFrame, seed });
   }
 
+  function updatePrintFrame(nextFrame: PrintFrameConfig) {
+    if (!project) {
+      return;
+    }
+
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      printFrame: clampPrintFrame(nextFrame)
+    });
+  }
+
+  function updatePrintSeed(seed: number) {
+    if (!printFrame) {
+      return;
+    }
+
+    updatePrintFrame({ ...printFrame, seed });
+  }
+
   function updateTextField(field: "title" | "subtitle" | "credit", value: string, maxLength: number) {
     if (!project) {
       return;
@@ -420,6 +459,31 @@ export function EditorSection({
       ...(target === "band"
         ? { bandColor: "system", systemBandHex: hex }
         : { backingColor: "system", systemBackingHex: hex })
+    });
+  }
+
+  async function applyCornerSystemBacking() {
+    if (!cornerFrame) {
+      return;
+    }
+
+    let hex: string | undefined;
+    if (mediaUrl) {
+      try {
+        const average = await sampleAverageColorFromUrl(mediaUrl, mediaAsset?.type ?? "image");
+        hex = deriveSystemColor(average, "backing");
+      } catch {
+        hex = undefined;
+      }
+    }
+    if (!hex) {
+      hex = deriveSystemColor({ r: 202, g: 188, b: 170 }, "backing");
+    }
+
+    updateCornerFrame({
+      ...cornerFrame,
+      backingColor: "system",
+      systemBackingHex: hex
     });
   }
 
@@ -536,8 +600,24 @@ export function EditorSection({
         className={isMobile ? "stage-action-primary" : "stage-action-download"}
         disabled={!project || !mediaAsset || isBusy}
         kind="download"
-        label={isMobile ? "保存到相册" : imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
-        title={isMobile ? "保存到相册" : imagesOnly ? "下载结果图" : mediaAsset?.type === "video" ? "下载结果视频" : "下载结果图"}
+        label={
+          isMobile
+            ? "保存到相册"
+            : mediaAsset?.type === "video"
+              ? "下载结果视频"
+              : isGifMedia(mediaAsset)
+                ? "下载结果 GIF"
+                : "下载结果图"
+        }
+        title={
+          isMobile
+            ? "保存到相册"
+            : mediaAsset?.type === "video"
+              ? "下载结果视频"
+              : isGifMedia(mediaAsset)
+                ? "下载结果 GIF"
+                : "下载结果图"
+        }
         onClick={onDownloadResult}
       />
     </div>
@@ -554,7 +634,7 @@ export function EditorSection({
             credit={project?.templateParams.text.credit ?? ""}
             font={activeFont}
             frame={refinedFrame}
-            onChangeCredit={(value) => updateTextField("credit", value, 48)}
+            onChangeCredit={(value) => updateTextField("credit", value, 72)}
             onChangeFont={updateFont}
             onChangeFrame={updateRefinedFrame}
           />
@@ -566,7 +646,7 @@ export function EditorSection({
             onChangeFont={updateFont}
             onChangeFrame={updateGridFrame}
             onChangeSeed={updateGridSeed}
-            onChangeTitle={(value) => updateTextField("title", value, 10)}
+            onChangeTitle={(value) => updateTextField("title", value, 20)}
           />
         ) : glassFrame ? (
           <GlassFrameControls
@@ -577,7 +657,7 @@ export function EditorSection({
             onApplySystemBacking={() => void applyGlassSystemBacking()}
             onChangeFont={updateFont}
             onChangeFrame={updateGlassFrame}
-            onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 24 : 48)}
+            onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 40 : 72)}
           />
         ) : glassSillFrame ? (
           <GlassSillFrameControls
@@ -585,7 +665,7 @@ export function EditorSection({
             font={activeFont}
             frame={glassSillFrame}
             onApplySystemBacking={() => void applyGlassSillSystemBacking()}
-            onChangeCaption={(value) => updateTextField("title", value, 40)}
+            onChangeCaption={(value) => updateTextField("title", value, 64)}
             onChangeFont={updateFont}
             onChangeFrame={updateGlassSillFrame}
           />
@@ -598,7 +678,18 @@ export function EditorSection({
                 onApplySystemColor={(target) => void applyBandSystemColor(target)}
                 onChangeFont={updateFont}
                 onChangeFrame={updateBandFrame}
-                onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 40 : 24)}
+                onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 64 : 40)}
+              />
+            ) : cornerFrame ? (
+              <CornerFrameControls
+                font={activeFont}
+                frame={cornerFrame}
+                subtitle={project?.templateParams.text.subtitle ?? ""}
+                title={project?.templateParams.text.title ?? ""}
+                onApplySystemBacking={() => void applyCornerSystemBacking()}
+                onChangeFont={updateFont}
+                onChangeFrame={updateCornerFrame}
+                onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 64 : 40)}
               />
             ) : flutedFrame ? (
               <FlutedFrameControls
@@ -614,6 +705,12 @@ export function EditorSection({
               />
             ) : dotFrame ? (
               <DotFrameControls frame={dotFrame} onChangeFrame={updateDotFrame} onChangeSeed={updateDotSeed} />
+            ) : printFrame ? (
+              <PrintFrameControls
+                frame={printFrame}
+                onChangeFrame={updatePrintFrame}
+                onChangeSeed={updatePrintSeed}
+              />
             ) : (
           <>
             <Field label="Ratio" value={project?.templateParams.canvas.ratio ?? "-"} />
@@ -685,9 +782,11 @@ export function EditorSection({
                 activeFont={activeFont}
                 project={project}
                 onApplyBandSystemColor={(target) => void applyBandSystemColor(target)}
+                onApplyCornerSystemBacking={() => void applyCornerSystemBacking()}
                 onApplyGlassSillSystemBacking={() => void applyGlassSillSystemBacking()}
                 onApplyGlassSystemBacking={() => void applyGlassSystemBacking()}
                 onChangeBandFrame={updateBandFrame}
+                onChangeCornerFrame={updateCornerFrame}
                 onChangeFont={updateFont}
                 onChangeGlassFrame={updateGlassFrame}
                 onChangeGlassSillFrame={updateGlassSillFrame}
@@ -701,6 +800,8 @@ export function EditorSection({
                 onChangeSwatchSeed={updateSwatchSeed}
                 onChangeDotFrame={updateDotFrame}
                 onChangeDotSeed={updateDotSeed}
+                onChangePrintFrame={updatePrintFrame}
+                onChangePrintSeed={updatePrintSeed}
               />
             </div>
           ) : null}

@@ -23,7 +23,8 @@ export const GLASS_SILL_FRAME_LIMITS = {
   edgeWidth: { min: 0, max: 8 },
   bottomBand: { min: 8, max: 22 },
   blur: { min: 4, max: 48 },
-  outerRadius: { min: 28, max: 96 }
+  outerRadius: { min: 28, max: 96 },
+  captionSize: { min: 12, max: 36 }
 } as const;
 
 /** 底层矩形更大：玻璃层相对画布内缩更多（@720 参考宽） */
@@ -56,6 +57,10 @@ export function clampGlassSillFrame(frame: GlassSillFrameConfig): GlassSillFrame
     outerRadius: Math.min(
       Math.max(frame.outerRadius ?? 56, GLASS_SILL_FRAME_LIMITS.outerRadius.min),
       GLASS_SILL_FRAME_LIMITS.outerRadius.max
+    ),
+    captionSize: Math.min(
+      Math.max(frame.captionSize ?? 18, GLASS_SILL_FRAME_LIMITS.captionSize.min),
+      GLASS_SILL_FRAME_LIMITS.captionSize.max
     ),
     backingColor: frame.backingColor ?? (frame.backingHex ? "system" : "system"),
     systemBackingHex: frame.systemBackingHex ?? frame.backingHex

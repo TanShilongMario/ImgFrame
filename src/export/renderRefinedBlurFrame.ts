@@ -57,9 +57,10 @@ function drawRefinedCredit(
   tone: RefinedFrameConfig["gradientTone"],
   canvasWidth: number,
   canvasHeight: number,
-  fontFamily: TextFontId
+  fontFamily: TextFontId,
+  creditSize: number
 ) {
-  const fontSize = Math.min(cssPx(14, canvasWidth), Math.max(cssPx(9, canvasWidth), canvasWidth * 0.012));
+  const fontSize = cssPx(creditSize, canvasWidth);
   const bottomInset = Math.min(cssPx(28, canvasHeight, canvasHeight), Math.max(cssPx(14, canvasHeight, canvasHeight), frameHeight * 0.03));
   const maxTextWidth = Math.min(frameWidth * 0.72, cssPx(480, canvasWidth));
 
@@ -154,7 +155,8 @@ export function renderRefinedBlurFrame(
     refinedFrame.gradientTone,
     width,
     height,
-    params.text.fontFamily
+    params.text.fontFamily,
+    refinedFrame.creditSize
   );
 
   return canvas;

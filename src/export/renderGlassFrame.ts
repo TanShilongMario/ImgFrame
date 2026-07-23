@@ -188,10 +188,10 @@ export function renderGlassFrame(
 
   const textColors = getGlassTextColors(glassFrame.textTone);
   const fontStack = getFontStack(params.text.fontFamily);
-  const title = params.text.title.slice(0, 24);
-  const subtitle = params.text.subtitle.slice(0, 48);
-  const titleSize = Math.min(cssPx(28, width), Math.max(cssPx(16, width), width * 0.042));
-  const subtitleSize = Math.min(cssPx(14, width), Math.max(cssPx(10, width), width * 0.018));
+  const title = params.text.title.slice(0, 40);
+  const subtitle = params.text.subtitle.slice(0, 72);
+  const titleSize = cssPx(glassFrame.titleSize, width);
+  const subtitleSize = cssPx(glassFrame.subtitleSize, width);
   const textX = innerX + cssPx(18, width);
   const textY = innerY + cssPx(22, width);
 

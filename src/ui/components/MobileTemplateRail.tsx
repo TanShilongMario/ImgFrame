@@ -1,3 +1,4 @@
+import { Image as ImageIcon } from "lucide-react";
 import { templateRegistry } from "../../templates/registry";
 
 /**
@@ -13,18 +14,26 @@ type MobileTemplateRailProps = {
 export function MobileTemplateRail({ activeTemplateId, onSelectTemplate }: MobileTemplateRailProps) {
   return (
     <div className="mobile-template-rail" role="listbox" aria-label="模板">
-      {templateRegistry.map((template) => (
-        <button
-          key={template.id}
-          aria-selected={activeTemplateId === template.id}
-          className={`mobile-template-chip${activeTemplateId === template.id ? " is-active" : ""}`}
-          role="option"
-          type="button"
-          onClick={() => onSelectTemplate(template.id)}
-        >
-          {template.name}
-        </button>
-      ))}
+      {templateRegistry.map((template) => {
+        const imageOnly = template.supportsVideo === false;
+
+        return (
+          <button
+            key={template.id}
+            aria-selected={activeTemplateId === template.id}
+            className={`mobile-template-chip${activeTemplateId === template.id ? " is-active" : ""}`}
+            role="option"
+            title={imageOnly ? `${template.name}（建议使用图片）` : template.name}
+            type="button"
+            onClick={() => onSelectTemplate(template.id)}
+          >
+            <span>{template.name}</span>
+            {imageOnly ? (
+              <ImageIcon aria-hidden="true" className="mobile-template-chip-badge" size={12} strokeWidth={2.2} />
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }

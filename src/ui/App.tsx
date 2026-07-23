@@ -19,6 +19,7 @@ import { mediaRepository, projectRepository, settingsRepository } from "../stora
 import type { MediaAsset, Project } from "../types";
 import { createId } from "../utils/id";
 import { downloadBlob, sanitizeFilename } from "../export/canvasUtils";
+import { exportProjectGif, shouldExportAsGif } from "../export/exportProjectGif";
 import { exportProjectImage } from "../export/exportProjectImage";
 import { exportProjectVideo } from "../export/exportProjectVideo";
 import { preloadFfmpeg } from "../export/transcodeToMp4";
@@ -377,6 +378,27 @@ function DesktopApp() {
             ? `MP4 转码失败，已下载 WebM（${result.fallbackReason ?? "未知原因"}）`
             : "结果视频已下载"
         );
+        return;
+      }
+
+      if (await shouldExportAsGif(mediaAsset)) {
+        setStatus("正在导出 GIF...");
+
+        const result = await exportProjectGif(project, mediaAsset, mediaUrl, {
+          onProgress: (progress, label) => {
+            if (label) {
+              setStatus(label);
+              return;
+            }
+
+            setStatus(`正在导出 GIF ${Math.round(progress * 100)}%...`);
+          }
+        });
+
+        const filename = `${sanitizeFilename(project.name)}.gif`;
+        downloadBlob(result.blob, filename);
+        const sizeMb = (result.byteSize / (1024 * 1024)).toFixed(1);
+        setStatus(`结果 GIF 已下载（${sizeMb}MB）`);
         return;
       }
 

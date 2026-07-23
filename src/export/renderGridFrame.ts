@@ -110,10 +110,10 @@ export function renderGridFrame(
   context.restore();
 
   const titleCell = cells[8];
-  const title = params.text.title.slice(0, 10);
+  const title = params.text.title.slice(0, 20);
   const titleX = ((titleCell.left + titleCell.width / 2) / 100) * width;
   const titleY = ((titleCell.top + titleCell.height / 2) / 100) * height;
-  const fontSize = Math.min(cssPx(28, width), Math.max(cssPx(14, width), width * 0.045));
+  const fontSize = cssPx(gridFrame.titleSize, width);
 
   context.save();
   context.font = `800 ${fontSize}px ${getFontStack(params.text.fontFamily)}`;

@@ -16,6 +16,8 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@vitejs/plugin-react": "^5.1.1",
+    "gifenc": "^1.0.3",
+    "gifuct-js": "^2.1.2",
     "lucide-react": "^1.21.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

@@ -52,6 +52,7 @@ export type GridFrameConfig = {
   lineY1: number;
   lineY2: number;
   seed: number;
+  titleSize: number;
   cellEffects: GridCellEffectEntry[];
 };
 
@@ -61,6 +62,7 @@ export type RefinedFrameConfig = {
   cropHeight: number;
   backgroundBlur: number;
   gradientTone: GradientTone;
+  creditSize: number;
 };
 
 export type GlassTextTone = "white" | "black" | "gray";
@@ -79,6 +81,25 @@ export type BandFrameConfig = {
   systemBackingHex?: string;
 };
 
+export type CornerTextAnchor = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+export type CornerFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  /** 图片相对画布的外边缘（%，露出衬底供四角文字） */
+  outerMargin: number;
+  /** 图片圆角 */
+  mediaRadius: number;
+  /** 图片白描边宽度 */
+  borderWidth: number;
+  subtitleSize: number;
+  titleSize: number;
+  /** 文字落在衬底四角之一 */
+  textCorner: CornerTextAnchor;
+  textTone: GlassTextTone;
+  backingColor: BandColorChoice;
+  systemBackingHex?: string;
+};
+
 export type GlassFrameConfig = {
   canvasRatio: RefinedCanvasRatio;
   edgeWidth: number;
@@ -86,6 +107,8 @@ export type GlassFrameConfig = {
   blur: number;
   outerRadius: number;
   textTone: GlassTextTone;
+  titleSize: number;
+  subtitleSize: number;
   backingColor: BandColorChoice;
   systemBackingHex?: string;
   /** @deprecated 迁移至 systemBackingHex */
@@ -99,6 +122,7 @@ export type GlassSillFrameConfig = {
   blur: number;
   outerRadius: number;
   textTone: GlassTextTone;
+  captionSize: number;
   backingColor: BandColorChoice;
   systemBackingHex?: string;
   causticHex?: string;
@@ -142,6 +166,19 @@ export type DotFrameConfig = {
   seed: number;
 };
 
+export type PrintPaperColor = "cream" | "sand" | "warm" | "parchment" | "newsprint";
+
+export type PrintFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  windowMargin: number;
+  innerRadius: number;
+  borderWidth: number;
+  /** 网点随机种子（影响疏密与分布） */
+  seed: number;
+  /** 顶层衬底纸张色 */
+  backingColor: PrintPaperColor;
+};
+
 export type TemplateParams = {
   canvas: {
     ratio: CanvasRatio;
@@ -167,9 +204,11 @@ export type TemplateParams = {
   glassFrame?: GlassFrameConfig;
   glassSillFrame?: GlassSillFrameConfig;
   bandFrame?: BandFrameConfig;
+  cornerFrame?: CornerFrameConfig;
   flutedFrame?: FlutedFrameConfig;
   swatchFrame?: SwatchFrameConfig;
   dotFrame?: DotFrameConfig;
+  printFrame?: PrintFrameConfig;
 };
 
 export type Project = {
@@ -195,4 +234,3 @@ export type AppSettings = {
   preferredRatio: CanvasRatio;
   updatedAt: string;
 };
-

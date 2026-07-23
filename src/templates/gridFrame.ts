@@ -5,6 +5,7 @@ export const GRID_LINE_LIMITS = {
   lineX2: { min: 58, max: 82 },
   lineY1: { min: 22, max: 48 },
   lineY2: { min: 62, max: 88 },
+  titleSize: { min: 14, max: 48 },
   minGap: 12
 } as const;
 
@@ -55,6 +56,7 @@ export function clampGridFrame(frame: GridFrameConfig): GridFrameConfig {
     lineX2,
     lineY1,
     lineY2,
+    titleSize: Math.min(Math.max(frame.titleSize ?? 28, GRID_LINE_LIMITS.titleSize.min), GRID_LINE_LIMITS.titleSize.max),
     seed: Math.max(0, Math.round(frame.seed))
   };
 }

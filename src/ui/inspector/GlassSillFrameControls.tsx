@@ -80,8 +80,17 @@ export function GlassSillFrameControls({
           onChange={(textTone) => onChangeFrame({ ...frame, textTone })}
         />
       </div>
+      <RangeControl
+        label="文字字号"
+        max={GLASS_SILL_FRAME_LIMITS.captionSize.max}
+        min={GLASS_SILL_FRAME_LIMITS.captionSize.min}
+        step={1}
+        suffix="px"
+        value={frame.captionSize}
+        onChange={(captionSize) => onChangeFrame({ ...frame, captionSize })}
+      />
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="底边文字" maxLength={40} value={caption} onChange={onChangeCaption} />
+      <TextAreaControl label="底边文字" maxLength={64} value={caption} onChange={onChangeCaption} />
     </>
   );
 }

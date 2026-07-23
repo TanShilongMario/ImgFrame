@@ -205,9 +205,9 @@ export function renderGlassSillFrame(
 
   drawInsetShadow(context, innerX, innerY, innerW, innerH, innerRadius);
 
-  const caption = params.text.title.slice(0, 40);
+  const caption = params.text.title.slice(0, 64);
   const fontStack = getFontStack(params.text.fontFamily);
-  const captionSize = Math.min(cssPx(18, width), Math.max(cssPx(12, width), width * 0.028));
+  const captionSize = cssPx(glassSillFrame.captionSize, width);
   const bandTop = height - insetsPx.bottom;
   const bandBottom = height - plateInset;
   const captionY = bandTop + (bandBottom - bandTop) / 2;

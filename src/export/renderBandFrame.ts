@@ -91,11 +91,11 @@ export function renderBandFrame(
 
   context.font = `700 ${subtitlePx}px ${fontStack}`;
   context.fillStyle = textColors.subtitle;
-  context.fillText(params.text.subtitle.slice(0, 24), cardX + padX, blockTop);
+  context.fillText(params.text.subtitle.slice(0, 40), cardX + padX, blockTop);
 
   context.font = `800 ${titlePx}px ${fontStack}`;
   context.fillStyle = textColors.title;
-  context.fillText(params.text.title.slice(0, 40), cardX + padX, blockTop + subtitlePx + gap);
+  context.fillText(params.text.title.slice(0, 64), cardX + padX, blockTop + subtitlePx + gap);
 
   context.restore();
 

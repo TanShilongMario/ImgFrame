@@ -74,10 +74,10 @@ export function BandFrameControls({
         onSystem={() => onApplySystemColor("backing")}
       />
       <FontControl value={font} onChange={onChangeFont} />
-      <TextAreaControl label="标题句" maxLength={40} value={title} onChange={(value) => onChangeText("title", value)} />
+      <TextAreaControl label="标题句" maxLength={64} value={title} onChange={(value) => onChangeText("title", value)} />
       <TextAreaControl
         label="副标题"
-        maxLength={24}
+        maxLength={40}
         value={subtitle}
         onChange={(value) => onChangeText("subtitle", value)}
       />

@@ -7,6 +7,11 @@ export type TemplateDefinition = {
   name: string;
   family: string;
   baseParams: TemplateParams;
+  /**
+   * 是否适合视频素材。false 时模板列表显示「建议图片」标识。
+   * 默认 true；计算极重、逐帧难以实时导出的模板应设为 false。
+   */
+  supportsVideo?: boolean;
 };
 
 export const templateRegistry: TemplateDefinition[] = [
@@ -36,7 +41,8 @@ export const templateRegistry: TemplateDefinition[] = [
         cropWidth: 33,
         cropHeight: 0,
         backgroundBlur: 32,
-        gradientTone: "white"
+        gradientTone: "white",
+        creditSize: 14
       }
     }
   },
@@ -69,6 +75,7 @@ export const templateRegistry: TemplateDefinition[] = [
         lineY1: 38,
         lineY2: 82,
         seed: 42,
+        titleSize: 28,
         cellEffects: deriveCellEffectsFromSeed(42)
       })
     }
@@ -101,6 +108,8 @@ export const templateRegistry: TemplateDefinition[] = [
         blur: 30,
         outerRadius: 64,
         textTone: "white",
+        titleSize: 28,
+        subtitleSize: 14,
         backingColor: "system"
       }
     }
@@ -133,6 +142,7 @@ export const templateRegistry: TemplateDefinition[] = [
         blur: 32,
         outerRadius: 56,
         textTone: "white",
+        captionSize: 18,
         backingColor: "system"
       }
     }
@@ -165,6 +175,40 @@ export const templateRegistry: TemplateDefinition[] = [
         subtitleSize: 16,
         titleSize: 30,
         bandColor: "cream",
+        backingColor: "sand"
+      }
+    }
+  },
+  {
+    id: "corner-caption",
+    name: "隅题",
+    family: "corner-frame",
+    baseParams: {
+      ...defaultTemplateParams,
+      canvas: { ratio: "4:5", background: "#d8c7b1", padding: 0 },
+      media: {
+        radius: 20,
+        borderWidth: 4,
+        borderColor: "#ffffff",
+        shadow: { blur: 28, offsetX: 0, offsetY: 10, opacity: 0.14 },
+        crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+      },
+      text: {
+        title: "Title for a sentence",
+        subtitle: "Subtitle",
+        credit: "隅题",
+        titleColor: "#111111",
+        fontFamily: "sans"
+      },
+      cornerFrame: {
+        canvasRatio: "auto",
+        outerMargin: 10,
+        mediaRadius: 20,
+        borderWidth: 4,
+        subtitleSize: 14,
+        titleSize: 28,
+        textCorner: "bottom-left",
+        textTone: "black",
         backingColor: "sand"
       }
     }
@@ -230,10 +274,43 @@ export const templateRegistry: TemplateDefinition[] = [
       }
     }
   },
+  // 波点模板暂时下线（效果不如网点）
+  // {
+  //   id: "polka-dots",
+  //   name: "波点",
+  //   family: "dot-frame",
+  //   baseParams: {
+  //     ...defaultTemplateParams,
+  //     canvas: { ratio: "3:4", background: "transparent", padding: 0 },
+  //     media: {
+  //       radius: 0,
+  //       borderWidth: 0,
+  //       borderColor: "#ffffff",
+  //       shadow: { blur: 0, offsetX: 0, offsetY: 0, opacity: 0 },
+  //       crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+  //     },
+  //     text: {
+  //       title: "",
+  //       subtitle: "",
+  //       credit: "波点",
+  //       titleColor: "#ffffff",
+  //       fontFamily: "sans"
+  //     },
+  //     dotFrame: {
+  //       canvasRatio: "auto",
+  //       windowMargin: 16,
+  //       innerRadius: 20,
+  //       borderWidth: 4,
+  //       seed: 42
+  //     }
+  //   }
+  // },
   {
-    id: "polka-dots",
-    name: "波点",
-    family: "dot-frame",
+    id: "halftone-print",
+    name: "网点",
+    family: "print-frame",
+    /** CMYK 半色调逐帧过重，视频导出不实用 */
+    supportsVideo: false,
     baseParams: {
       ...defaultTemplateParams,
       canvas: { ratio: "3:4", background: "transparent", padding: 0 },
@@ -247,16 +324,17 @@ export const templateRegistry: TemplateDefinition[] = [
       text: {
         title: "",
         subtitle: "",
-        credit: "波点",
+        credit: "网点",
         titleColor: "#ffffff",
         fontFamily: "sans"
       },
-      dotFrame: {
+      printFrame: {
         canvasRatio: "auto",
         windowMargin: 16,
         innerRadius: 20,
         borderWidth: 4,
-        seed: 42
+        seed: 42,
+        backingColor: "cream"
       }
     }
   }

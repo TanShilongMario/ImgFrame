@@ -1,4 +1,6 @@
 import { useRef, type DragEvent, type ChangeEvent } from "react";
+import { useLocale } from "../../i18n/LocaleContext";
+import type { MessageKey } from "../../i18n/messages";
 import { isUploadableMediaFile } from "../../media/videoPoster";
 import { HeroDotField } from "./HeroDotField";
 
@@ -43,12 +45,14 @@ export function HeroUploadCard({
   onFileSelect,
   onMagicFrame
 }: HeroUploadCardProps) {
+  const { t } = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const changeInputRef = useRef<HTMLInputElement>(null);
   const isCeremony = ceremonyPhase !== "idle";
   const hasPreview = Boolean(previewUrl);
   const hasSelectedMedia = hasPreview || isPreviewLoading;
   const showPreviewImage = hasPreview && (ceremonyPhase === "idle" || ceremonyPhase === "done");
+  const ceremonyText = ceremonyLabel ? t(ceremonyLabel as MessageKey) : "";
 
   function openFilePicker(target: "upload" | "change") {
     if (isBusy || isCeremony) {
@@ -91,7 +95,7 @@ export function HeroUploadCard({
   }
 
   const mediaAccept = imageOnly ? "image/*" : "image/*,video/*";
-  const uploadLabel = imageOnly ? "上传图片" : "Upload photo or video";
+  const uploadLabel = imageOnly ? t("upload.photo") : t("upload.photoOrVideo");
 
   return (
     <div
@@ -102,12 +106,12 @@ export function HeroUploadCard({
     >
       <div className="hero-upload-frame">
         {isPreviewLoading ? (
-          <p className="hero-upload-preview-loading">正在读取视频首帧…</p>
+          <p className="hero-upload-preview-loading">{t("upload.readingPoster")}</p>
         ) : null}
 
         {showPreviewImage ? (
           <img
-            alt="已选素材预览"
+            alt={t("upload.previewAlt")}
             className={`hero-upload-preview${ceremonyPhase === "done" ? " is-reveal" : ""}`}
             src={previewUrl ?? undefined}
           />
@@ -118,7 +122,7 @@ export function HeroUploadCard({
         {isCeremony ? (
           <div className="hero-upload-ceremony-copy">
             <p key={ceremonyLabel} className="hero-upload-ceremony-label">
-              {ceremonyLabel}
+              {ceremonyText}
             </p>
             <div className="hero-upload-ceremony-bar">
               <span className={`hero-upload-ceremony-progress is-${ceremonyPhase}`} aria-hidden="true" />
@@ -149,7 +153,7 @@ export function HeroUploadCard({
               type="button"
               onClick={() => openFilePicker("change")}
             >
-              Change Media
+              {t("upload.change")}
             </button>
             <button
               className="hero-upload-action hero-upload-action-magic"
@@ -157,7 +161,7 @@ export function HeroUploadCard({
               type="button"
               onClick={onMagicFrame}
             >
-              Magic Frame
+              {t("upload.magic")}
             </button>
           </>
         )}

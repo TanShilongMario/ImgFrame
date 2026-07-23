@@ -1,8 +1,16 @@
-import { Dices } from "lucide-react";
 import type { GridFrameConfig, GridLineTone } from "../../types";
 import { GRID_LINE_LIMITS } from "../../templates/gridFrame";
 import type { TextFontId } from "../../templates/fonts";
-import { FontControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption } from "./controls";
+import {
+  FieldCaption,
+  FontControl,
+  LocalizedDiceButton,
+  RangeControl,
+  RatioControl,
+  SegmentedControl,
+  TextAreaControl,
+  type SegmentedOption
+} from "./controls";
 
 const LINE_TONE_OPTIONS: SegmentedOption<GridLineTone>[] = [
   { value: "white", label: "白" },
@@ -30,7 +38,7 @@ export function GridFrameControls({
     <>
       <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} />
       <div className="field field-control">
-        <span>线与文字</span>
+        <FieldCaption>线与文字</FieldCaption>
         <SegmentedControl
           options={LINE_TONE_OPTIONS}
           value={frame.lineTone}
@@ -74,18 +82,10 @@ export function GridFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, lineY2: value })}
       />
       <div className="field field-control seed-control">
-        <span>随机种子</span>
+        <FieldCaption>随机种子</FieldCaption>
         <div className="seed-value-row">
           <strong>{frame.seed}</strong>
-          <button
-            aria-label="重掷随机种子"
-            className="seed-dice"
-            title="重掷随机种子"
-            type="button"
-            onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-          >
-            <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-          </button>
+          <LocalizedDiceButton label="重掷随机种子" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
         </div>
       </div>
       <RangeControl

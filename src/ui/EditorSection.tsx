@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "../i18n/LocaleContext";
 import { getTemplateById } from "../templates/registry";
 import type {
   BandFrameConfig,
@@ -12,6 +13,7 @@ import type {
   RefinedFrameConfig,
   DotFrameConfig,
   PrintFrameConfig,
+  StampFrameConfig,
   SwatchFrameConfig,
   TemplateParams
 } from "../types";
@@ -23,6 +25,7 @@ import {
 } from "../templates/glassSillFrame";
 import { clampFlutedFrame } from "../templates/flutedFrame";
 import { clampPrintFrame } from "../templates/printFrame";
+import { clampStampFrame } from "../templates/stampFrame";
 import { clampDotFrame } from "../templates/dotFrame";
 import { clampSwatchFrame } from "../templates/swatchFrame";
 import { clampCornerFrame } from "../templates/cornerFrame";
@@ -37,6 +40,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Field } from "./inspector/controls";
 import { FlutedFrameControls } from "./inspector/FlutedFrameControls";
 import { PrintFrameControls } from "./inspector/PrintFrameControls";
+import { StampFrameControls } from "./inspector/StampFrameControls";
 import { DotFrameControls } from "./inspector/DotFrameControls";
 import { SwatchFrameControls } from "./inspector/SwatchFrameControls";
 import { BandFrameControls } from "./inspector/BandFrameControls";
@@ -82,6 +86,7 @@ export function EditorSection({
   onSelectTemplate,
   onMagicFrame
 }: EditorSectionProps) {
+  const { t } = useLocale();
   const [activeSheet, setActiveSheet] = useState<"none" | "templates" | "params">("none");
   const isMobile = variant === "mobile";
   const activeTemplate = project ? getTemplateById(project.templateId) : undefined;
@@ -97,6 +102,7 @@ export function EditorSection({
   const swatchFrame = activeTemplate?.family === "swatch-frame" ? project?.templateParams.swatchFrame : undefined;
   const dotFrame = activeTemplate?.family === "dot-frame" ? project?.templateParams.dotFrame : undefined;
   const printFrame = activeTemplate?.family === "print-frame" ? project?.templateParams.printFrame : undefined;
+  const stampFrame = activeTemplate?.family === "stamp-frame" ? project?.templateParams.stampFrame : undefined;
   const activeFont = normalizeTextFont(project?.templateParams.text.fontFamily);
   const lastGlassBackingSampleRef = useRef<{ mediaId?: string; hex?: string }>({});
   const lastGlassSillSampleRef = useRef<{ mediaId?: string; backingHex?: string; causticHex?: string }>({});
@@ -408,6 +414,18 @@ export function EditorSection({
     updatePrintFrame({ ...printFrame, seed });
   }
 
+  function updateStampFrame(nextFrame: StampFrameConfig) {
+    if (!project) return;
+    onUpdateTemplateParams({
+      ...project.templateParams,
+      stampFrame: clampStampFrame(nextFrame)
+    });
+  }
+
+  function updateStampSeed(seed: number) {
+    if (stampFrame) updateStampFrame({ ...stampFrame, seed });
+  }
+
   function updateTextField(field: "title" | "subtitle" | "credit", value: string, maxLength: number) {
     if (!project) {
       return;
@@ -575,15 +593,15 @@ export function EditorSection({
         accept={uploadAccept}
         disabled={isBusy}
         kind="upload"
-        label="上传素材"
-        title="上传素材"
+        label={t("stage.upload")}
+        title={t("stage.upload")}
         onUpload={onUpload}
       />
       <StageActionButton
         disabled={!project}
         kind="random"
-        label="随机"
-        title="参数随机"
+        label={t("stage.random")}
+        title={t("stage.random")}
         onClick={onShuffleParams}
       />
       {!isMobile ? (
@@ -591,8 +609,8 @@ export function EditorSection({
           className="stage-action-primary"
           disabled={!project}
           kind="save"
-          label="保存至画册"
-          title="保存至画册"
+          label={t("stage.saveAlbum")}
+          title={t("stage.saveAlbum")}
           onClick={() => onSaveToAlbum?.()}
         />
       ) : null}
@@ -602,21 +620,21 @@ export function EditorSection({
         kind="download"
         label={
           isMobile
-            ? "保存到相册"
+            ? t("stage.savePhotos")
             : mediaAsset?.type === "video"
-              ? "下载结果视频"
+              ? t("stage.downloadVideo")
               : isGifMedia(mediaAsset)
-                ? "下载结果 GIF"
-                : "下载结果图"
+                ? t("stage.downloadGif")
+                : t("stage.downloadImage")
         }
         title={
           isMobile
-            ? "保存到相册"
+            ? t("stage.savePhotos")
             : mediaAsset?.type === "video"
-              ? "下载结果视频"
+              ? t("stage.downloadVideo")
               : isGifMedia(mediaAsset)
-                ? "下载结果 GIF"
-                : "下载结果图"
+                ? t("stage.downloadGif")
+                : t("stage.downloadImage")
         }
         onClick={onDownloadResult}
       />
@@ -626,7 +644,7 @@ export function EditorSection({
   const controlPanelContent = (
     <section className="panel control-panel">
       <div className="panel-heading panel-heading-static">
-        <span>Frame</span>
+        <span>{t("panel.frame")}</span>
       </div>
       <div className="panel-content">
         {refinedFrame ? (
@@ -711,6 +729,18 @@ export function EditorSection({
                 onChangeFrame={updatePrintFrame}
                 onChangeSeed={updatePrintSeed}
               />
+            ) : stampFrame ? (
+              <StampFrameControls
+                frame={stampFrame}
+                title={project?.templateParams.text.title ?? ""}
+                date={project?.templateParams.text.subtitle ?? ""}
+                postmark={project?.templateParams.text.credit ?? ""}
+                font={activeFont}
+                onChangeFrame={updateStampFrame}
+                onChangeSeed={updateStampSeed}
+                onChangeText={(field, value) => updateTextField(field, value, field === "title" ? 48 : field === "subtitle" ? 32 : 64)}
+                onChangeFont={updateFont}
+              />
             ) : (
           <>
             <Field label="Ratio" value={project?.templateParams.canvas.ratio ?? "-"} />
@@ -758,7 +788,7 @@ export function EditorSection({
               type="button"
               onClick={() => openSheet("templates")}
             >
-              模板
+              {t("dock.templates")}
             </button>
             <button
               className={`mobile-sheet-trigger${activeSheet === "params" ? " is-active" : ""}`}
@@ -766,7 +796,7 @@ export function EditorSection({
               type="button"
               onClick={() => openSheet("params")}
             >
-              参数
+              {t("dock.params")}
             </button>
           </div>
 
@@ -802,6 +832,8 @@ export function EditorSection({
                 onChangeDotSeed={updateDotSeed}
                 onChangePrintFrame={updatePrintFrame}
                 onChangePrintSeed={updatePrintSeed}
+                onChangeStampFrame={updateStampFrame}
+                onChangeStampSeed={updateStampSeed}
               />
             </div>
           ) : null}
@@ -825,7 +857,7 @@ export function EditorSection({
 
           {!isMobile && onNavigate ? (
             <button
-              aria-label="浏览模板画廊"
+              aria-label={t("stage.browseGallery")}
               className="scroll-hint scroll-hint-stage"
               type="button"
               onClick={() => onNavigate("gallery")}

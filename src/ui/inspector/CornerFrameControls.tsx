@@ -2,6 +2,7 @@ import type { BandColorChoice, CornerFrameConfig, GlassTextTone } from "../../ty
 import { CORNER_FRAME_LIMITS, CORNER_TEXT_ANCHOR_OPTIONS } from "../../templates/cornerFrame";
 import type { TextFontId } from "../../templates/fonts";
 import {
+  FieldCaption,
   FontControl,
   PresetColorControl,
   RangeControl,
@@ -67,7 +68,7 @@ export function CornerFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
       />
       <div className="field field-control">
-        <span>文字位置</span>
+        <FieldCaption>文字位置</FieldCaption>
         <SegmentedControl
           options={CORNER_TEXT_ANCHOR_OPTIONS}
           value={frame.textCorner}
@@ -75,7 +76,7 @@ export function CornerFrameControls({
         />
       </div>
       <div className="field field-control">
-        <span>文字颜色</span>
+        <FieldCaption>文字颜色</FieldCaption>
         <SegmentedControl
           options={TEXT_TONE_OPTIONS}
           value={frame.textTone}

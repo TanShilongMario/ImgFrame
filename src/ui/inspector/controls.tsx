@@ -1,13 +1,47 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Dices } from "lucide-react";
-import type { BandColorChoice, RefinedCanvasRatio } from "../../types";
+import { useLocale } from "../../i18n/LocaleContext";
+import type { BandColorChoice, PrintPaperColor, RefinedCanvasRatio } from "../../types";
 import { BAND_FIXED_COLORS } from "../../templates/bandFrame";
+import { PRINT_PAPER_COLORS } from "../../templates/printFrame";
 import { TEXT_FONT_OPTIONS, type TextFontId } from "../../templates/fonts";
 
+/** 将中文控件标签按当前语言显示 */
+export function ControlLabel({ children }: { children: string }) {
+  const { tl } = useLocale();
+  return <>{tl(children)}</>;
+}
+
+/** 字段标题（替换原 <span>中文</span>） */
+export function FieldCaption({ children }: { children: string }) {
+  const { tl } = useLocale();
+  return <span>{tl(children)}</span>;
+}
+
+/** 骰子重掷按钮，自动翻译 aria/title */
+export function LocalizedDiceButton({
+  label,
+  onClick,
+  className = "seed-dice"
+}: {
+  label: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  const { tl } = useLocale();
+  const text = tl(label);
+  return (
+    <button aria-label={text} className={className} title={text} type="button" onClick={onClick}>
+      <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
+    </button>
+  );
+}
+
 export function Field({ label, value }: { label: string; value: string }) {
+  const { tl } = useLocale();
   return (
     <div className="field">
-      <span>{label}</span>
+      <span>{tl(label)}</span>
       <strong>{value}</strong>
     </div>
   );
@@ -50,6 +84,9 @@ export function RangeControl({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const { tl } = useLocale();
+  const displayLabel = tl(label);
+  const displaySuffix = suffix ? tl(suffix) : "";
   const ratio = max === min ? 0 : (value - min) / (max - min);
   const [draft, setDraft] = useState(() => formatRangeValue(value, step));
   const [isEditing, setIsEditing] = useState(false);
@@ -78,7 +115,7 @@ export function RangeControl({
 
   return (
     <div className="field field-control range-control">
-      <span>{label}</span>
+      <span>{displayLabel}</span>
       <div className="range-control-row">
         <div className="range-track-shell">
           <div className="range-track-inner">
@@ -86,7 +123,7 @@ export function RangeControl({
               <div className="range-track-fill" />
             </div>
             <input
-              aria-label={label}
+              aria-label={displayLabel}
               className="range-track-input"
               max={max}
               min={min}
@@ -99,7 +136,7 @@ export function RangeControl({
         </div>
         <div className="range-control-value">
           <input
-            aria-label={`${label}数值`}
+            aria-label={`${displayLabel} ${tl("数值")}`}
             className="range-control-value-input"
             inputMode="decimal"
             type="text"
@@ -121,7 +158,7 @@ export function RangeControl({
               }
             }}
           />
-          {suffix ? <span className="range-control-value-suffix">{suffix}</span> : null}
+          {displaySuffix ? <span className="range-control-value-suffix">{displaySuffix}</span> : null}
         </div>
       </div>
     </div>
@@ -145,6 +182,8 @@ export function SegmentedControl<T extends string>({
   wrap?: boolean;
   onChange: (value: T) => void;
 }) {
+  const { tl } = useLocale();
+
   return (
     <div className={`segmented-control${wrap ? " segmented-control-wrap" : ""}`}>
       {options.map((option) => (
@@ -156,7 +195,7 @@ export function SegmentedControl<T extends string>({
           type="button"
           onClick={() => onChange(option.value)}
         >
-          {option.label}
+          {tl(option.label)}
         </button>
       ))}
     </div>
@@ -179,9 +218,11 @@ export function RatioControl({
   value: RefinedCanvasRatio;
   onChange: (value: RefinedCanvasRatio) => void;
 }) {
+  const { tl } = useLocale();
+
   return (
     <div className="field field-control">
-      <span>画布比例</span>
+      <span>{tl("画布比例")}</span>
       <SegmentedControl wrap options={RATIO_OPTIONS} value={value} onChange={onChange} />
     </div>
   );
@@ -200,9 +241,11 @@ export function FontControl({
   value: TextFontId;
   onChange: (value: TextFontId) => void;
 }) {
+  const { tl } = useLocale();
+
   return (
     <div className="field field-control">
-      <span>字体</span>
+      <span>{tl("字体")}</span>
       <SegmentedControl wrap options={FONT_OPTIONS} value={value} onChange={onChange} />
     </div>
   );
@@ -219,9 +262,11 @@ export function TextAreaControl({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { tl } = useLocale();
+
   return (
     <div className="field text-control">
-      <span>{label}</span>
+      <span>{tl(label)}</span>
       <div className="range-track-shell text-control-shell">
         <textarea maxLength={maxLength} value={value} onChange={(event) => onChange(event.target.value)} />
       </div>
@@ -240,24 +285,29 @@ export function PresetColorControl({
   onPick: (choice: BandColorChoice) => void;
   onSystem: () => void;
 }) {
+  const { tl } = useLocale();
+
   return (
     <div className="field field-control band-color-field">
-      <span>{label}</span>
+      <span>{tl(label)}</span>
       <div className="band-color-control">
         <div className="segmented-control segmented-control-colors band-color-row">
-          {BAND_FIXED_COLORS.map((option) => (
-            <button
-              key={option.id}
-              aria-label={option.label}
-              aria-pressed={value === option.id}
-              className={`band-color-swatch${value === option.id ? " is-active" : ""}`}
-              title={option.label}
-              type="button"
-              onClick={() => onPick(option.id)}
-            >
-              <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
-            </button>
-          ))}
+          {BAND_FIXED_COLORS.map((option) => {
+            const optionLabel = tl(option.label);
+            return (
+              <button
+                key={option.id}
+                aria-label={optionLabel}
+                aria-pressed={value === option.id}
+                className={`band-color-swatch${value === option.id ? " is-active" : ""}`}
+                title={optionLabel}
+                type="button"
+                onClick={() => onPick(option.id)}
+              >
+                <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
+              </button>
+            );
+          })}
         </div>
         <div className="segmented-control band-color-system-row">
           <button
@@ -272,8 +322,44 @@ export function PresetColorControl({
             }}
           >
             <Dices aria-hidden="true" size={14} strokeWidth={2.2} />
-            系统配色
+            {tl("系统配色")}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PaperColorControl({
+  value,
+  onChange
+}: {
+  value: PrintPaperColor;
+  onChange: (value: PrintPaperColor) => void;
+}) {
+  const { tl } = useLocale();
+
+  return (
+    <div className="field field-control band-color-field">
+      <span>{tl("衬底纸张")}</span>
+      <div className="band-color-control">
+        <div className="segmented-control segmented-control-colors band-color-row">
+          {PRINT_PAPER_COLORS.map((option) => {
+            const optionLabel = tl(option.label);
+            return (
+              <button
+                key={option.id}
+                aria-label={optionLabel}
+                aria-pressed={value === option.id}
+                className={`band-color-swatch${value === option.id ? " is-active" : ""}`}
+                title={optionLabel}
+                type="button"
+                onClick={() => onChange(option.id)}
+              >
+                <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

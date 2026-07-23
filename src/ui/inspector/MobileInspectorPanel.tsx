@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useLocale } from "../../i18n/LocaleContext";
 import { getTemplateById } from "../../templates/registry";
 import type { Project } from "../../types";
 import type { TextFontId } from "../../templates/fonts";
@@ -6,6 +7,7 @@ import {
   buildBandMobileTabs,
   buildCornerMobileTabs,
   buildPrintMobileTabs,
+  buildStampMobileTabs,
   buildDotMobileTabs,
   buildFlutedMobileTabs,
   buildSwatchMobileTabs,
@@ -21,6 +23,7 @@ import type {
   DotFrameConfig,
   FlutedFrameConfig,
   PrintFrameConfig,
+  StampFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
   GlassSillFrameConfig,
@@ -44,6 +47,8 @@ type MobileInspectorPanelProps = {
   onChangeSwatchSeed: (seed: number) => void;
   onChangePrintFrame: (frame: PrintFrameConfig) => void;
   onChangePrintSeed: (seed: number) => void;
+  onChangeStampFrame: (frame: StampFrameConfig) => void;
+  onChangeStampSeed: (seed: number) => void;
   onChangeDotFrame: (frame: DotFrameConfig) => void;
   onChangeDotSeed: (seed: number) => void;
   onChangeTextField: (field: "title" | "subtitle" | "credit", value: string, maxLength: number) => void;
@@ -70,6 +75,8 @@ export function MobileInspectorPanel({
   onChangeSwatchSeed,
   onChangePrintFrame,
   onChangePrintSeed,
+  onChangeStampFrame,
+  onChangeStampSeed,
   onChangeDotFrame,
   onChangeDotSeed,
   onChangeTextField,
@@ -79,6 +86,7 @@ export function MobileInspectorPanel({
   onApplyBandSystemColor,
   onApplyCornerSystemBacking
 }: MobileInspectorPanelProps) {
+  const { tl, locale } = useLocale();
   const activeTemplate = getTemplateById(project.templateId);
   const refinedFrame =
     activeTemplate.family === "refined-blur-frame" ? project.templateParams.refinedFrame : undefined;
@@ -91,6 +99,7 @@ export function MobileInspectorPanel({
   const flutedFrame = activeTemplate.family === "fluted-frame" ? project.templateParams.flutedFrame : undefined;
   const swatchFrame = activeTemplate.family === "swatch-frame" ? project.templateParams.swatchFrame : undefined;
   const printFrame = activeTemplate.family === "print-frame" ? project.templateParams.printFrame : undefined;
+  const stampFrame = activeTemplate.family === "stamp-frame" ? project.templateParams.stampFrame : undefined;
   const dotFrame = activeTemplate.family === "dot-frame" ? project.templateParams.dotFrame : undefined;
 
   const tabs = useMemo(() => {
@@ -192,6 +201,20 @@ export function MobileInspectorPanel({
       });
     }
 
+    if (stampFrame) {
+      return buildStampMobileTabs({
+        frame: stampFrame,
+        title: project.templateParams.text.title ?? "",
+        date: project.templateParams.text.subtitle ?? "",
+        postmark: project.templateParams.text.credit ?? "",
+        font: activeFont,
+        onChangeFrame: onChangeStampFrame,
+        onChangeSeed: onChangeStampSeed,
+        onChangeText: (field, value) => onChangeTextField(field, value, field === "title" ? 48 : field === "subtitle" ? 32 : 64),
+        onChangeFont
+      });
+    }
+
     if (dotFrame) {
       return buildDotMobileTabs({
         frame: dotFrame,
@@ -206,6 +229,7 @@ export function MobileInspectorPanel({
     bandFrame,
     cornerFrame,
     printFrame,
+    stampFrame,
     dotFrame,
     flutedFrame,
     swatchFrame,
@@ -222,6 +246,8 @@ export function MobileInspectorPanel({
     onChangeFlutedSeed,
     onChangePrintFrame,
     onChangePrintSeed,
+    onChangeStampFrame,
+    onChangeStampSeed,
     onChangeDotFrame,
     onChangeDotSeed,
     onChangeSwatchFrame,
@@ -239,5 +265,10 @@ export function MobileInspectorPanel({
     refinedFrame
   ]);
 
-  return <MobileTabbedInspector key={project.templateId} tabs={tabs} />;
+  const localizedTabs = useMemo(
+    () => tabs.map((tab) => ({ ...tab, label: tl(tab.label) })),
+    [tabs, tl, locale]
+  );
+
+  return <MobileTabbedInspector key={project.templateId} tabs={localizedTabs} />;
 }

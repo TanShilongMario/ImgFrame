@@ -12,6 +12,7 @@ import { renderSwatchFrame } from "./renderSwatchFrame";
 import { renderGlassSillFrame } from "./renderGlassSillFrame";
 import { renderRefinedBlurFrame } from "./renderRefinedBlurFrame";
 import { renderStandardFrame } from "./renderStandardFrame";
+import { renderStampFrame } from "./renderStampFrame";
 
 export type RenderFrameFormat = "png" | "jpeg" | "mp4";
 
@@ -61,6 +62,12 @@ export function renderProjectFrame(
 
   if (template.family === "print-frame") {
     return renderPrintFrame(project.templateParams, media, scale);
+  }
+
+  if (template.family === "stamp-frame") {
+    return renderStampFrame(project.templateParams, media, scale, {
+      paletteCacheKey: `${project.id}|${project.mediaAssetId ?? project.templateId}`
+    });
   }
 
   return renderStandardFrame(project.templateParams, media, scale);

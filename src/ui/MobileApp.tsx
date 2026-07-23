@@ -1,11 +1,15 @@
 import { useEffect } from "react";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
+import { useLocale } from "../i18n/LocaleContext";
+import { translateStatus } from "../i18n/translateStatus";
 import { EditorSection } from "./EditorSection";
+import { LanguageToggle } from "./components/LanguageToggle";
 import { MobileSavePreview } from "./components/MobileSavePreview";
 
 export function MobileApp() {
   useAppTheme();
+  const { locale, templateName } = useLocale();
   const workspace = useWorkspaceState({ imagesOnly: true });
 
   useEffect(() => {
@@ -17,6 +21,8 @@ export function MobileApp() {
 
   return (
     <div className="mobile-app">
+      <LanguageToggle variant="mobile" />
+
       <EditorSection
         imagesOnly
         isBusy={workspace.isBusy}
@@ -33,7 +39,7 @@ export function MobileApp() {
       />
 
       <div aria-live="polite" className={`app-toast${workspace.toastVisible ? " is-visible" : ""}`} role="status">
-        {workspace.status}
+        {translateStatus(workspace.status, locale, templateName)}
       </div>
 
       {workspace.savePreviewUrl ? (

@@ -1,18 +1,22 @@
 import type { AppSection } from "../../hooks/useOrchestratedNavigation";
+import { useLocale } from "../../i18n/LocaleContext";
+import { LanguageToggle } from "./LanguageToggle";
 
 type SiteHeaderProps = {
   activeSection: AppSection;
   onNavigate: (section: AppSection) => void;
 };
 
-const navItems: { id: AppSection; label: string }[] = [
-  { id: "hero", label: "Home" },
-  { id: "editor", label: "Design" },
-  { id: "gallery", label: "Gallery" },
-  { id: "album", label: "My Frames" }
-];
-
 export function SiteHeader({ activeSection, onNavigate }: SiteHeaderProps) {
+  const { t } = useLocale();
+
+  const navItems: { id: AppSection; labelKey: "nav.home" | "nav.design" | "nav.gallery" | "nav.album" }[] = [
+    { id: "hero", labelKey: "nav.home" },
+    { id: "editor", labelKey: "nav.design" },
+    { id: "gallery", labelKey: "nav.gallery" },
+    { id: "album", labelKey: "nav.album" }
+  ];
+
   return (
     <header className="site-header">
       <div className="site-header-brand">FrameForge</div>
@@ -24,24 +28,10 @@ export function SiteHeader({ activeSection, onNavigate }: SiteHeaderProps) {
             type="button"
             onClick={() => onNavigate(item.id)}
           >
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
-        {/* 暗色模式固定，切换入口暂时下线
-        <button
-          aria-label={theme === "dark" ? "切换到亮色模式" : "切换到暗色模式"}
-          className="site-header-theme-toggle"
-          title={theme === "dark" ? "切换到亮色模式" : "切换到暗色模式"}
-          type="button"
-          onClick={onToggleTheme}
-        >
-          {theme === "dark" ? (
-            <Sun aria-hidden="true" size={15} strokeWidth={2.2} />
-          ) : (
-            <Moon aria-hidden="true" size={15} strokeWidth={2.2} />
-          )}
-        </button>
-        */}
+        <LanguageToggle variant="header" />
       </nav>
     </header>
   );

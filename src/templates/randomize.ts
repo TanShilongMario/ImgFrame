@@ -1,4 +1,4 @@
-import type { BandColorChoice, BandFrameConfig, CanvasRatio, CornerFrameConfig, CornerTextAnchor, DotFrameConfig, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GlassTextTone, GridFrameConfig, PrintFrameConfig, SwatchFrameConfig, TemplateParams } from "../types";
+import type { BandColorChoice, BandFrameConfig, CanvasRatio, CornerFrameConfig, CornerTextAnchor, DotFrameConfig, FlutedFrameConfig, GlassFrameConfig, GlassSillFrameConfig, GlassTextTone, GridFrameConfig, PrintFrameConfig, StampFrameConfig, SwatchFrameConfig, TemplateParams } from "../types";
 import { clampDotFrame } from "./dotFrame";
 import { clampPrintFrame } from "./printFrame";
 import { clampFlutedFrame } from "./flutedFrame";
@@ -9,6 +9,7 @@ import { clampGlassFrame } from "./glassFrame";
 import { clampGlassSillFrame } from "./glassSillFrame";
 import { clampBandFrame } from "./bandFrame";
 import { deriveCellEffectsFromSeed, normalizeCellEffects, withDerivedGridEffects } from "./gridFrame";
+import { clampStampFrame, formatStampDate } from "./stampFrame";
 
 const ratios: CanvasRatio[] = ["1:1", "4:5", "3:4", "9:16", "16:9"];
 const backgrounds = ["#e9e7e2", "#1a1a18", "#dfe8e4", "#f3efe8", "#2c2c2a", "#ece8e1", "#d8ddd8"];
@@ -62,6 +63,24 @@ function cloneParams(params: TemplateParams): TemplateParams {
 }
 
 export function randomizeTemplateParams(base: TemplateParams): TemplateParams {
+  if (base.stampFrame) {
+    return {
+      ...cloneParams(base),
+      text: {
+        ...base.text,
+        subtitle: formatStampDate()
+      },
+      stampFrame: clampStampFrame({
+        ...base.stampFrame,
+        stampSize: range(28, 42),
+        stampPadding: range(4, 9),
+        perforationSize: range(6, 11),
+        seed: Math.floor(Math.random() * 100000),
+        captionSize: range(12, 18)
+      })
+    };
+  }
+
   if (base.printFrame) {
     const paperChoices = ["cream", "sand", "warm", "parchment", "newsprint"] as const;
 
@@ -345,6 +364,10 @@ export function normalizePrintFrame(frame?: PrintFrameConfig): PrintFrameConfig 
   }
 
   return clampPrintFrame(frame);
+}
+
+export function normalizeStampFrame(frame?: StampFrameConfig): StampFrameConfig | undefined {
+  return frame ? clampStampFrame(frame) : undefined;
 }
 
 export function normalizeDotFrame(frame?: DotFrameConfig): DotFrameConfig | undefined {

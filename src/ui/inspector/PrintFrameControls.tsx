@@ -1,7 +1,6 @@
-import { Dices } from "lucide-react";
-import type { PrintFrameConfig, PrintPaperColor } from "../../types";
-import { PRINT_FRAME_LIMITS, PRINT_PAPER_COLORS } from "../../templates/printFrame";
-import { RangeControl, RatioControl } from "./controls";
+import type { PrintFrameConfig } from "../../types";
+import { PRINT_FRAME_LIMITS } from "../../templates/printFrame";
+import { FieldCaption, LocalizedDiceButton, PaperColorControl, RangeControl, RatioControl } from "./controls";
 
 export function PrintFrameControls({
   frame,
@@ -42,39 +41,15 @@ export function PrintFrameControls({
         value={frame.borderWidth}
         onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
       />
-      <div className="field field-control band-color-field">
-        <span>衬底纸张</span>
-        <div className="band-color-control">
-          <div className="segmented-control segmented-control-colors band-color-row">
-            {PRINT_PAPER_COLORS.map((option) => (
-              <button
-                key={option.id}
-                aria-label={option.label}
-                aria-pressed={frame.backingColor === option.id}
-                className={`band-color-swatch${frame.backingColor === option.id ? " is-active" : ""}`}
-                title={option.label}
-                type="button"
-                onClick={() => onChangeFrame({ ...frame, backingColor: option.id as PrintPaperColor })}
-              >
-                <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PaperColorControl
+        value={frame.backingColor}
+        onChange={(backingColor) => onChangeFrame({ ...frame, backingColor })}
+      />
       <div className="field field-control seed-control">
-        <span>随机网点</span>
+        <FieldCaption>随机网点</FieldCaption>
         <div className="seed-value-row">
           <strong>{frame.seed}</strong>
-          <button
-            aria-label="重掷网点参数"
-            className="seed-dice"
-            title="重掷网点参数"
-            type="button"
-            onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-          >
-            <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-          </button>
+          <LocalizedDiceButton label="重掷网点参数" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
         </div>
       </div>
     </>

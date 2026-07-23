@@ -4,6 +4,7 @@ import type {
   CornerFrameConfig,
   DotFrameConfig,
   PrintFrameConfig,
+  StampFrameConfig,
   FlutedFrameConfig,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -66,11 +67,13 @@ import { combinePreviewSurface as surface } from "../../preview/previewParamTran
 import { cssPx } from "../../utils/cssPx";
 import { renderFlutedFrame } from "../../export/renderFlutedFrame";
 import { renderPrintFrame } from "../../export/renderPrintFrame";
+import { renderStampFrame } from "../../export/renderStampFrame";
 import { renderDotFrame } from "../../export/renderDotFrame";
 import { renderSwatchFrame } from "../../export/renderSwatchFrame";
 import { resolveExportDimensions } from "../../export/sizing";
 import { clampFlutedFrame, resolveFlutedRatioNumber } from "../../templates/flutedFrame";
 import { clampPrintFrame, resolvePrintRatioNumber } from "../../templates/printFrame";
+import { clampStampFrame, resolveStampRatioNumber } from "../../templates/stampFrame";
 import { clampDotFrame, resolveDotRatioNumber } from "../../templates/dotFrame";
 import { clampSwatchFrame, resolveSwatchRatioNumber } from "../../templates/swatchFrame";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -1496,6 +1499,140 @@ function PrintCardPreview({
   );
 }
 
+function StampCardPreview({
+  stampFrame,
+  mediaUrl,
+  mediaType = "image",
+  params,
+  ratio,
+  ratioNumber,
+  variant
+}: {
+  stampFrame: StampFrameConfig;
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  params: TemplateParams;
+  ratio: string;
+  ratioNumber: number;
+  variant: CardPreviewProps["variant"];
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const measuredWidth = useElementWidth(rootRef);
+  const refWidth = Math.max(1, Math.round(measuredWidth || 360));
+  const frame = clampStampFrame(stampFrame);
+  const [contentRatio, setContentRatio] = useState(ratioNumber);
+
+  useEffect(() => {
+    if (!mediaUrl || !canvasRef.current) return;
+    let cancelled = false;
+    let video: HTMLVideoElement | undefined;
+    let videoFrameId: number | undefined;
+    let animationFrameId: number | undefined;
+
+    async function renderPreview() {
+      function paint(source: CanvasImageSource, width: number, height: number) {
+        if (cancelled || !canvasRef.current) return;
+        const media = { source, width, height };
+        const resolvedRatio = variant === "hero" ? ratioNumber : resolveStampRatioNumber(frame, width, height);
+        const base = resolveExportDimensions(resolvedRatio, media, 1);
+        const rendered = renderStampFrame({ ...params, stampFrame: frame }, media, refWidth / base.width);
+        const canvas = canvasRef.current;
+        if (canvas.width !== rendered.width || canvas.height !== rendered.height) {
+          canvas.width = rendered.width;
+          canvas.height = rendered.height;
+        }
+        const context = canvas.getContext("2d");
+        context?.clearRect(0, 0, canvas.width, canvas.height);
+        context?.drawImage(rendered, 0, 0);
+        const nextRatio = rendered.width / Math.max(1, rendered.height);
+        setContentRatio((previous) => (Math.abs(previous - nextRatio) > 0.002 ? nextRatio : previous));
+      }
+
+      if (mediaType === "video") {
+        video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.loop = true;
+        video.preload = "auto";
+        video.src = mediaUrl!;
+        await new Promise<void>((resolve, reject) => {
+          video!.onloadeddata = () => resolve();
+          video!.onerror = () => reject(new Error("无法加载视频预览。"));
+        });
+        if (cancelled) return;
+
+        const paintVideoFrame = () => {
+          if (cancelled || !video) return;
+          paint(video, video.videoWidth, video.videoHeight);
+          if ("requestVideoFrameCallback" in video) {
+            videoFrameId = video.requestVideoFrameCallback(paintVideoFrame);
+          } else {
+            animationFrameId = requestAnimationFrame(paintVideoFrame);
+          }
+        };
+
+        await video.play();
+        paintVideoFrame();
+        return;
+      }
+
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("无法加载图片预览。"));
+        image.src = mediaUrl!;
+      });
+      paint(image, image.naturalWidth, image.naturalHeight);
+    }
+
+    void renderPreview().catch((error) => console.error("邮票预览渲染失败:", error));
+    return () => {
+      cancelled = true;
+      if (video) {
+        if (videoFrameId !== undefined && "cancelVideoFrameCallback" in video) {
+          video.cancelVideoFrameCallback(videoFrameId);
+        }
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
+      if (animationFrameId !== undefined) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [
+    frame.canvasRatio,
+    frame.captionSize,
+    frame.perforationSize,
+    frame.seed,
+    frame.stampPadding,
+    frame.stampSize,
+    mediaType,
+    mediaUrl,
+    params.text.credit,
+    params.text.fontFamily,
+    params.text.subtitle,
+    params.text.title,
+    refWidth,
+    ratioNumber,
+    variant
+  ]);
+
+  const stageStyle =
+    variant === "stage"
+      ? { ...getStagePreviewStyle(String(contentRatio), contentRatio), background: "transparent" }
+      : variant === "hero"
+        ? { background: "transparent", height: "100%", width: "100%" }
+        : { aspectRatio: ratio, background: "transparent" };
+
+  return (
+    <div ref={rootRef} className={surface(`card-preview card-preview-${variant} card-preview-stamp`)} style={stageStyle}>
+      <canvas className="stamp-preview-canvas" ref={canvasRef} />
+    </div>
+  );
+}
+
 export function CardPreview({
   params,
   templateId,
@@ -1517,6 +1654,7 @@ export function CardPreview({
   const swatchFrame = template?.family === "swatch-frame" ? params.swatchFrame : undefined;
   const dotFrame = template?.family === "dot-frame" ? params.dotFrame : undefined;
   const printFrame = template?.family === "print-frame" ? params.printFrame : undefined;
+  const stampFrame = template?.family === "stamp-frame" ? params.stampFrame : undefined;
   const imageRatio = useImageAspectRatio(mediaUrl, mediaType);
   const frameCanvasRatio =
     refinedFrame?.canvasRatio ??
@@ -1528,7 +1666,8 @@ export function CardPreview({
     flutedFrame?.canvasRatio ??
     swatchFrame?.canvasRatio ??
     dotFrame?.canvasRatio ??
-    printFrame?.canvasRatio;
+    printFrame?.canvasRatio ??
+    stampFrame?.canvasRatio;
   const { ratio, ratioNumber } =
     variant === "hero"
       ? { ratio: HERO_PREVIEW_RATIO, ratioNumber: HERO_PREVIEW_RATIO_NUMBER }
@@ -1642,6 +1781,20 @@ export function CardPreview({
     return (
       <PrintCardPreview
         printFrame={printFrame}
+        mediaType={mediaType}
+        mediaUrl={mediaUrl}
+        params={params}
+        ratio={ratio}
+        ratioNumber={ratioNumber}
+        variant={variant}
+      />
+    );
+  }
+
+  if (framed && stampFrame) {
+    return (
+      <StampCardPreview
+        stampFrame={stampFrame}
         mediaType={mediaType}
         mediaUrl={mediaUrl}
         params={params}

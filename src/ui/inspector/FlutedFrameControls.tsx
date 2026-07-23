@@ -1,7 +1,6 @@
-import { Dices } from "lucide-react";
 import type { FlutedFrameConfig } from "../../types";
 import { FLUTED_FRAME_LIMITS } from "../../templates/flutedFrame";
-import { RangeControl, RatioControl } from "./controls";
+import { FieldCaption, LocalizedDiceButton, RangeControl, RatioControl } from "./controls";
 
 export function FlutedFrameControls({
   frame,
@@ -43,18 +42,13 @@ export function FlutedFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
       />
       <div className="field field-control seed-control">
-        <span>随机长虹</span>
+        <FieldCaption>随机长虹</FieldCaption>
         <div className="seed-value-row">
           <strong>{frame.seed}</strong>
-          <button
-            aria-label="重掷长虹玻璃参数"
-            className="seed-dice"
-            title="重掷长虹玻璃参数"
-            type="button"
+          <LocalizedDiceButton
+            label="重掷长虹玻璃参数"
             onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-          >
-            <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-          </button>
+          />
         </div>
       </div>
     </>

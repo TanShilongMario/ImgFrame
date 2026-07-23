@@ -1,7 +1,6 @@
-import { Dices } from "lucide-react";
 import type { SwatchFrameConfig } from "../../types";
 import { SWATCH_FRAME_LIMITS } from "../../templates/swatchFrame";
-import { RangeControl, RatioControl } from "./controls";
+import { FieldCaption, LocalizedDiceButton, RangeControl, RatioControl } from "./controls";
 
 export function SwatchFrameControls({
   frame,
@@ -52,18 +51,10 @@ export function SwatchFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, segmentCount: value })}
       />
       <div className="field field-control seed-control">
-        <span>随机取色</span>
+        <FieldCaption>随机取色</FieldCaption>
         <div className="seed-value-row">
           <strong>{frame.seed}</strong>
-          <button
-            aria-label="重掷随机取色"
-            className="seed-dice"
-            title="重掷随机取色"
-            type="button"
-            onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-          >
-            <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-          </button>
+          <LocalizedDiceButton label="重掷随机取色" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
         </div>
       </div>
     </>

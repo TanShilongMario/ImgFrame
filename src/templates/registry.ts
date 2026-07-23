@@ -1,6 +1,7 @@
 import type { TemplateParams } from "../types";
 import { deriveCellEffectsFromSeed, withDerivedGridEffects } from "./gridFrame";
 import { defaultTemplateParams } from "./defaults";
+import { formatStampDate } from "./stampFrame";
 
 export type TemplateDefinition = {
   id: string;
@@ -305,6 +306,37 @@ export const templateRegistry: TemplateDefinition[] = [
   //     }
   //   }
   // },
+  {
+    id: "postage-stamp",
+    name: "邮票",
+    family: "stamp-frame",
+    baseParams: {
+      ...defaultTemplateParams,
+      canvas: { ratio: "3:4", background: "transparent", padding: 0 },
+      media: {
+        radius: 0,
+        borderWidth: 0,
+        borderColor: "#ffffff",
+        shadow: { blur: 0, offsetX: 0, offsetY: 0, opacity: 0 },
+        crop: { x: 0, y: 0, scale: 1, rotation: 0 }
+      },
+      text: {
+        title: "PRINTED MEMORIES",
+        subtitle: formatStampDate(),
+        credit: "FRAME FORGE",
+        titleColor: "#eee9de",
+        fontFamily: "typewriter"
+      },
+      stampFrame: {
+        canvasRatio: "3:4",
+        stampSize: 34,
+        stampPadding: 6,
+        perforationSize: 8,
+        seed: 42,
+        captionSize: 15
+      }
+    }
+  },
   {
     id: "halftone-print",
     name: "网点",

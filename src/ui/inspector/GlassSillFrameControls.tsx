@@ -1,7 +1,7 @@
 import type { GlassSillFrameConfig, GlassTextTone } from "../../types";
 import { GLASS_SILL_FRAME_LIMITS } from "../../templates/glassSillFrame";
 import type { TextFontId } from "../../templates/fonts";
-import { FontControl, PresetColorControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption } from "./controls";
+import { FontControl, FieldCaption, PresetColorControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption } from "./controls";
 
 const TEXT_TONE_OPTIONS: SegmentedOption<GlassTextTone>[] = [
   { value: "white", label: "白" },
@@ -72,7 +72,7 @@ export function GlassSillFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, blur: value })}
       />
       <div className="field field-control">
-        <span>文字颜色</span>
+        <FieldCaption>文字颜色</FieldCaption>
         <SegmentedControl
           wrap
           options={TEXT_TONE_OPTIONS}

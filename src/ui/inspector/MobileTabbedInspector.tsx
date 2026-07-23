@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useLocale } from "../../i18n/LocaleContext";
 
 export type MobileInspectorTab = {
   id: string;
@@ -11,6 +12,7 @@ type MobileTabbedInspectorProps = {
 };
 
 export function MobileTabbedInspector({ tabs }: MobileTabbedInspectorProps) {
+  const { tl } = useLocale();
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function MobileTabbedInspector({ tabs }: MobileTabbedInspectorProps) {
 
   return (
     <div className="mobile-tabbed-inspector">
-      <div className="mobile-inspector-tabs" role="tablist" aria-label="参数分类">
+      <div className="mobile-inspector-tabs" role="tablist" aria-label={tl("参数分类")}>
         {tabs.map((tab) => (
           <button
             key={tab.id}

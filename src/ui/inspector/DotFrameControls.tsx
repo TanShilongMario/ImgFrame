@@ -1,7 +1,6 @@
-import { Dices } from "lucide-react";
 import type { DotFrameConfig } from "../../types";
 import { DOT_FRAME_LIMITS } from "../../templates/dotFrame";
-import { RangeControl, RatioControl } from "./controls";
+import { FieldCaption, LocalizedDiceButton, RangeControl, RatioControl } from "./controls";
 
 export function DotFrameControls({
   frame,
@@ -43,18 +42,10 @@ export function DotFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, borderWidth: value })}
       />
       <div className="field field-control seed-control">
-        <span>随机波点</span>
+        <FieldCaption>随机波点</FieldCaption>
         <div className="seed-value-row">
           <strong>{frame.seed}</strong>
-          <button
-            aria-label="重掷波点参数"
-            className="seed-dice"
-            title="重掷波点参数"
-            type="button"
-            onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-          >
-            <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-          </button>
+          <LocalizedDiceButton label="重掷波点参数" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
         </div>
       </div>
     </>

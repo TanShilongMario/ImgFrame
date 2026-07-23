@@ -19,7 +19,7 @@ import { preloadFfmpeg } from "../export/transcodeToMp4";
 import type { HeroUploadOptions } from "../ui/HeroPage";
 
 /** 高频/初始状态不弹 toast，避免拖动滑杆时提示不断闪现 */
-const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存"]);
+const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存", "status.waiting", "status.updated"]);
 
 type UseWorkspaceStateOptions = {
   imagesOnly?: boolean;
@@ -213,7 +213,7 @@ export function useWorkspaceState({ imagesOnly = false }: UseWorkspaceStateOptio
     const template = getTemplateById(templateId);
     const nextProject = switchProjectTemplate(project, templateId);
     updateProject(nextProject);
-    setStatus(`已切换至「${template.name}」`);
+    setStatus(`status.switched|${template.id}`);
   }
 
   function handleUpdateTemplateParams(params: TemplateParams) {

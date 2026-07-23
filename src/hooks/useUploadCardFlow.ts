@@ -5,11 +5,11 @@ import type { HeroCeremonyPhase } from "../ui/components/HeroUploadPanel";
 import type { HeroUploadOptions } from "../ui/HeroPage";
 
 // 每幕之间刻意留出静止的一拍，营造"起 — 顿 — 起"的仪式节奏
-const CEREMONY_STEPS: Array<{ phase: HeroCeremonyPhase; label: string; delay: number }> = [
-  { phase: "dots", label: "素材进入画布", delay: 0 },
-  { phase: "reading", label: "正在采样色彩", delay: 1650 },
-  { phase: "transforming", label: "正在生成展示卡片", delay: 3250 },
-  { phase: "done", label: "定格完成 · 即将进入编辑器", delay: 4600 }
+const CEREMONY_STEPS: Array<{ phase: HeroCeremonyPhase; labelKey: "ceremony.enter" | "ceremony.sampling" | "ceremony.generating" | "ceremony.done"; delay: number }> = [
+  { phase: "dots", labelKey: "ceremony.enter", delay: 0 },
+  { phase: "reading", labelKey: "ceremony.sampling", delay: 1650 },
+  { phase: "transforming", labelKey: "ceremony.generating", delay: 3250 },
+  { phase: "done", labelKey: "ceremony.done", delay: 4600 }
 ];
 
 function wait(ms: number) {
@@ -127,7 +127,7 @@ export function useUploadCardFlow({
         }
 
         setCeremonyPhase(step.phase);
-        setCeremonyLabel(step.label);
+        setCeremonyLabel(step.labelKey);
         previousDelay = step.delay;
       }
 

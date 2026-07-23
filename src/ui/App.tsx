@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { buildGalleryBatch, type GalleryEntry } from "../gallery/catalog";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useOrchestratedNavigation } from "../hooks/useOrchestratedNavigation";
+import { useLocale } from "../i18n/LocaleContext";
+import { translateStatus } from "../i18n/translateStatus";
 import { analyzeImageFile } from "../media/analyzeImage";
 import { createMediaAsset } from "../media/metadata";
 import {
@@ -32,7 +34,7 @@ import { MobileApp } from "./MobileApp";
 import { SiteHeader } from "./components/SiteHeader";
 
 /** 高频/初始状态不弹 toast，避免拖动滑杆时提示不断闪现 */
-const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存"]);
+const QUIET_STATUSES = new Set(["等待上传素材", "项目已更新，尚未保存", "status.waiting", "status.updated"]);
 
 export function App() {
   const isMobile = useIsMobile();
@@ -47,6 +49,7 @@ export function App() {
 function DesktopApp() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { activeSection, navigateTo } = useOrchestratedNavigation(scrollRef);
+  const { locale, templateName } = useLocale();
   useAppTheme();
   const [project, setProject] = useState<Project | null>(null);
   const [mediaAsset, setMediaAsset] = useState<MediaAsset | null>(null);
@@ -340,7 +343,7 @@ function DesktopApp() {
     const template = getTemplateById(templateId);
     const nextProject = switchProjectTemplate(project, templateId);
     updateProject(nextProject);
-    setStatus(`已切换至「${template.name}」`);
+    setStatus(`status.switched|${template.id}`);
   }
 
   async function handleDownloadResult() {
@@ -490,7 +493,7 @@ function DesktopApp() {
       </div>
 
       <div aria-live="polite" className={`app-toast${toastVisible ? " is-visible" : ""}`} role="status">
-        {status}
+        {translateStatus(status, locale, templateName)}
       </div>
     </>
   );

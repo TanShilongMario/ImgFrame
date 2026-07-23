@@ -1,8 +1,9 @@
 import { createId } from "../utils/id";
 import type { GridFrameConfig, MediaAsset, Project, RefinedFrameConfig, TemplateParams } from "../types";
-import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeCornerFrame, normalizeDotFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizePrintFrame, normalizeSwatchFrame } from "../templates/randomize";
+import { randomizeFull, randomizeWithinTemplate, normalizeBandFrame, normalizeCornerFrame, normalizeDotFrame, normalizeFlutedFrame, normalizeGlassFrame, normalizeGlassSillFrame, normalizeGridFrame, normalizePrintFrame, normalizeStampFrame, normalizeSwatchFrame } from "../templates/randomize";
 import { getTemplateById } from "../templates/registry";
 import { normalizeTextFont } from "../templates/fonts";
+import { formatStampDate } from "../templates/stampFrame";
 
 export function normalizeProject(project: Project): Project {
   let templateParams = project.templateParams;
@@ -95,6 +96,14 @@ export function normalizeProject(project: Project): Project {
     };
   }
 
+  const stampFrame = normalizeStampFrame(templateParams.stampFrame);
+  if (stampFrame) {
+    templateParams = {
+      ...templateParams,
+      stampFrame
+    };
+  }
+
   if (templateParams === project.templateParams) {
     return project;
   }
@@ -172,11 +181,15 @@ export function shuffleProjectParams(project: Project): Project {
 
 export function switchProjectTemplate(project: Project, templateId: string): Project {
   const template = getTemplateById(templateId);
+  const templateParams = structuredClone(template.baseParams);
+  if (template.family === "stamp-frame") {
+    templateParams.text.subtitle = formatStampDate();
+  }
 
   return {
     ...project,
     templateId: template.id,
-    templateParams: structuredClone(template.baseParams),
+    templateParams,
     updatedAt: new Date().toISOString()
   };
 }

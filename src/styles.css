@@ -1734,7 +1734,8 @@ label.stage-action {
 }
 
 .hero-template-card .fluted-preview-canvas,
-.hero-template-card .swatch-preview-canvas {
+.hero-template-card .swatch-preview-canvas,
+.hero-template-card .stamp-preview-canvas {
   display: block;
   height: 100%;
   max-height: 100%;
@@ -3425,6 +3426,83 @@ label.stage-action {
 }
 
 /* ============================================================
+   语言切换（黑白对位 pill）
+   ============================================================ */
+
+.language-toggle {
+  align-items: center;
+  background: rgba(42, 42, 40, 0.92);
+  border: 1px solid rgba(245, 245, 243, 0.12);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  color: rgba(245, 245, 243, 0.42);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0;
+  height: 30px;
+  padding: 2px;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.language-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.language-toggle-opt {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  height: 100%;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  min-width: 26px;
+  padding: 0 8px;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.language-toggle-opt.is-active {
+  background: #f5f5f3;
+  color: #1b1b19;
+}
+
+.language-toggle-divider {
+  background: rgba(245, 245, 243, 0.18);
+  flex: 0 0 1px;
+  height: 12px;
+  margin: 0 1px;
+}
+
+.language-toggle-header {
+  margin-left: 6px;
+}
+
+.language-toggle-mobile {
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  z-index: 120;
+}
+
+[data-theme="dark"] .language-toggle {
+  background: rgba(18, 18, 16, 0.88);
+  border-color: rgba(245, 245, 243, 0.14);
+}
+
+[data-theme="dark"] .language-toggle-opt.is-active {
+  background: #ecebe6;
+  color: #141412;
+}
+
+/* ============================================================
    暗色模式 —— 与浅色同一套暖灰语言，只翻转明度
    ============================================================ */
 
@@ -3831,6 +3909,7 @@ html[data-layout="mobile"] body {
 
 .mobile-stage .stage-main {
   align-items: center;
+  container-type: size;
   display: flex;
   flex: 1 1 auto;
   justify-content: center;
@@ -3843,7 +3922,8 @@ html[data-layout="mobile"] body {
   height: auto !important;
   max-height: 100%;
   max-width: 100%;
-  width: auto !important;
+  /* 勿用 width:auto：前几个绝对定位 DOM 模板无固有尺寸会塌成 0×0 */
+  width: min(100cqw, calc(100cqh * var(--preview-ratio, 0.75))) !important;
 }
 
 .mobile-stage .stage-main > .stage-empty-upload {
@@ -4138,7 +4218,8 @@ html[data-layout="mobile"] .app-toast.is-visible {
 .fluted-preview-canvas,
 .swatch-preview-canvas,
 .dot-preview-canvas,
-.print-preview-canvas {
+.print-preview-canvas,
+.stamp-preview-canvas {
   display: block;
   height: 100%;
   object-fit: contain;

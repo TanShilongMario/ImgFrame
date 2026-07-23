@@ -179,6 +179,20 @@ export type PrintFrameConfig = {
   backingColor: PrintPaperColor;
 };
 
+export type StampFrameConfig = {
+  canvasRatio: RefinedCanvasRatio;
+  /** 邮票整体占画布短边的比例 */
+  stampSize: number;
+  /** 图像到邮票外缘的留白（邮票尺寸百分比） */
+  stampPadding: number;
+  /** 齿孔半径（基于 720px 设计宽度） */
+  perforationSize: number;
+  /** 随机种子，稳定决定倾斜角度与纸张纹理 */
+  seed: number;
+  /** 邮票下方说明文字字号 */
+  captionSize: number;
+};
+
 export type TemplateParams = {
   canvas: {
     ratio: CanvasRatio;
@@ -209,6 +223,7 @@ export type TemplateParams = {
   swatchFrame?: SwatchFrameConfig;
   dotFrame?: DotFrameConfig;
   printFrame?: PrintFrameConfig;
+  stampFrame?: StampFrameConfig;
 };
 
 export type Project = {

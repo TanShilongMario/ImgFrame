@@ -1,4 +1,4 @@
-export type TextFontId = "sans" | "serif" | "song" | "kai" | "brush" | "hand";
+export type TextFontId = "sans" | "serif" | "song" | "kai" | "brush" | "hand" | "typewriter";
 
 export type TextFontOption = {
   id: TextFontId;
@@ -40,6 +40,11 @@ export const TEXT_FONT_OPTIONS: TextFontOption[] = [
     id: "hand",
     label: "手写",
     stack: '"Hannotate SC", "Hanzipen SC", "Bradley Hand", "Comic Sans MS", "Kaiti SC", cursive'
+  },
+  {
+    id: "typewriter",
+    label: "打字机",
+    stack: '"Courier Prime", "American Typewriter", "Courier New", "Noto Sans Mono CJK SC", monospace'
   }
 ];
 

@@ -1,6 +1,14 @@
 import type { GradientTone, RefinedFrameConfig } from "../../types";
 import type { TextFontId } from "../../templates/fonts";
-import { FontControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption } from "./controls";
+import {
+  FieldCaption,
+  FontControl,
+  RangeControl,
+  RatioControl,
+  SegmentedControl,
+  TextAreaControl,
+  type SegmentedOption
+} from "./controls";
 
 const GRADIENT_TONE_OPTIONS: SegmentedOption<GradientTone>[] = [
   { value: "white", label: "白" },
@@ -53,7 +61,7 @@ export function RefinedFrameControls({
         onChange={(value) => onChangeFrame({ ...frame, backgroundBlur: value })}
       />
       <div className="field field-control">
-        <span>渐变颜色</span>
+        <FieldCaption>渐变颜色</FieldCaption>
         <SegmentedControl
           options={GRADIENT_TONE_OPTIONS}
           value={frame.gradientTone}

@@ -17,6 +17,8 @@ export function getStagePreviewStyle(ratio: string, ratioNumber: number) {
     aspectRatio: ratio,
     height: "auto",
     maxWidth: "100%",
-    width
+    width,
+    // 移动端用 cqh × 比例算宽，避免 width:auto 把绝对定位 DOM 模板压成 0×0
+    ["--preview-ratio" as string]: String(ratioNumber)
   } as const;
 }

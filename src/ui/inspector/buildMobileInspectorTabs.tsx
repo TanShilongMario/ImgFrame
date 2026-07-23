@@ -1,11 +1,10 @@
-import { Dices } from "lucide-react";
 import type {
   BandFrameConfig,
   CornerFrameConfig,
   DotFrameConfig,
   FlutedFrameConfig,
   PrintFrameConfig,
-  PrintPaperColor,
+  StampFrameConfig,
   GlassTextTone,
   SwatchFrameConfig,
   GlassFrameConfig,
@@ -15,7 +14,8 @@ import type {
 } from "../../types";
 import { BAND_FRAME_LIMITS } from "../../templates/bandFrame";
 import { CORNER_FRAME_LIMITS, CORNER_TEXT_ANCHOR_OPTIONS } from "../../templates/cornerFrame";
-import { PRINT_FRAME_LIMITS, PRINT_PAPER_COLORS } from "../../templates/printFrame";
+import { PRINT_FRAME_LIMITS } from "../../templates/printFrame";
+import { STAMP_FRAME_LIMITS } from "../../templates/stampFrame";
 import { DOT_FRAME_LIMITS } from "../../templates/dotFrame";
 import { FLUTED_FRAME_LIMITS } from "../../templates/flutedFrame";
 import { SWATCH_FRAME_LIMITS } from "../../templates/swatchFrame";
@@ -23,15 +23,7 @@ import { GLASS_FRAME_LIMITS } from "../../templates/glassFrame";
 import { GLASS_SILL_FRAME_LIMITS } from "../../templates/glassSillFrame";
 import { GRID_LINE_LIMITS } from "../../templates/gridFrame";
 import type { TextFontId } from "../../templates/fonts";
-import {
-  FontControl,
-  PresetColorControl,
-  RangeControl,
-  RatioControl,
-  SegmentedControl,
-  TextAreaControl,
-  type SegmentedOption
-} from "./controls";
+import { FontControl, PresetColorControl, PaperColorControl, RangeControl, RatioControl, SegmentedControl, TextAreaControl, type SegmentedOption, FieldCaption, LocalizedDiceButton } from "./controls";
 import type { MobileInspectorTab } from "./MobileTabbedInspector";
 
 const GRADIENT_TONE_OPTIONS: SegmentedOption<"white" | "black">[] = [
@@ -121,7 +113,7 @@ export function buildRefinedMobileTabs({
       label: "渐变",
       content: (
         <div className="field field-control">
-          <span>渐变颜色</span>
+          <FieldCaption>渐变颜色</FieldCaption>
           <SegmentedControl
             options={GRADIENT_TONE_OPTIONS}
             value={frame.gradientTone}
@@ -176,7 +168,7 @@ export function buildGridMobileTabs({
       label: "线色",
       content: (
         <div className="field field-control">
-          <span>线与文字</span>
+          <FieldCaption>线与文字</FieldCaption>
           <SegmentedControl
             options={LINE_TONE_OPTIONS}
             value={frame.lineTone}
@@ -250,18 +242,10 @@ export function buildGridMobileTabs({
       label: "种子",
       content: (
         <div className="field field-control seed-control mobile-seed-pane">
-          <span>随机种子</span>
+          <FieldCaption>随机种子</FieldCaption>
           <div className="seed-value-row">
             <strong>{frame.seed}</strong>
-            <button
-              aria-label="重掷随机种子"
-              className="seed-dice"
-              title="重掷随机种子"
-              type="button"
-              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-            >
-              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-            </button>
+            <LocalizedDiceButton label="重掷随机种子" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
           </div>
         </div>
       )
@@ -386,7 +370,7 @@ export function buildGlassMobileTabs({
       label: "字色",
       content: (
         <div className="field field-control">
-          <span>文字颜色</span>
+          <FieldCaption>文字颜色</FieldCaption>
           <SegmentedControl
             wrap
             options={GLASS_TEXT_TONE_OPTIONS}
@@ -526,7 +510,7 @@ export function buildGlassSillMobileTabs({
       label: "字色",
       content: (
         <div className="field field-control">
-          <span>文字颜色</span>
+          <FieldCaption>文字颜色</FieldCaption>
           <SegmentedControl
             wrap
             options={GLASS_TEXT_TONE_OPTIONS}
@@ -764,7 +748,7 @@ export function buildCornerMobileTabs({
       label: "位置",
       content: (
         <div className="field field-control">
-          <span>文字位置</span>
+          <FieldCaption>文字位置</FieldCaption>
           <SegmentedControl
             options={CORNER_TEXT_ANCHOR_OPTIONS}
             value={frame.textCorner}
@@ -778,7 +762,7 @@ export function buildCornerMobileTabs({
       label: "颜色",
       content: (
         <div className="field field-control">
-          <span>文字颜色</span>
+          <FieldCaption>文字颜色</FieldCaption>
           <SegmentedControl
             options={CORNER_TEXT_TONE_OPTIONS}
             value={frame.textTone}
@@ -914,18 +898,10 @@ export function buildFlutedMobileTabs({
       label: "长虹",
       content: (
         <div className="field field-control seed-control">
-          <span>随机长虹</span>
+          <FieldCaption>随机长虹</FieldCaption>
           <div className="seed-value-row">
             <strong>{frame.seed}</strong>
-            <button
-              aria-label="重掷长虹玻璃参数"
-              className="seed-dice"
-              title="重掷长虹玻璃参数"
-              type="button"
-              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-            >
-              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-            </button>
+            <LocalizedDiceButton label="重掷长虹玻璃参数" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
           </div>
         </div>
       )
@@ -1013,18 +989,10 @@ export function buildSwatchMobileTabs({
       label: "随机",
       content: (
         <div className="field field-control seed-control">
-          <span>随机取色</span>
+          <FieldCaption>随机取色</FieldCaption>
           <div className="seed-value-row">
             <strong>{frame.seed}</strong>
-            <button
-              aria-label="重掷随机取色"
-              className="seed-dice"
-              title="重掷随机取色"
-              type="button"
-              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-            >
-              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-            </button>
+            <LocalizedDiceButton label="重掷随机取色" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
           </div>
         </div>
       )
@@ -1097,18 +1065,10 @@ export function buildDotMobileTabs({
       label: "波点",
       content: (
         <div className="field field-control seed-control">
-          <span>随机波点</span>
+          <FieldCaption>随机波点</FieldCaption>
           <div className="seed-value-row">
             <strong>{frame.seed}</strong>
-            <button
-              aria-label="重掷波点参数"
-              className="seed-dice"
-              title="重掷波点参数"
-              type="button"
-              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-            >
-              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-            </button>
+            <LocalizedDiceButton label="重掷波点参数" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
           </div>
         </div>
       )
@@ -1180,26 +1140,10 @@ export function buildPrintMobileTabs({
       id: "paper",
       label: "纸张",
       content: (
-        <div className="field field-control band-color-field">
-          <span>衬底纸张</span>
-          <div className="band-color-control">
-            <div className="segmented-control segmented-control-colors band-color-row">
-              {PRINT_PAPER_COLORS.map((option) => (
-                <button
-                  key={option.id}
-                  aria-label={option.label}
-                  aria-pressed={frame.backingColor === option.id}
-                  className={`band-color-swatch${frame.backingColor === option.id ? " is-active" : ""}`}
-                  title={option.label}
-                  type="button"
-                  onClick={() => onChangeFrame({ ...frame, backingColor: option.id as PrintPaperColor })}
-                >
-                  <span aria-hidden="true" className="band-color-swatch-chip" style={{ background: option.hex }} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <PaperColorControl
+          value={frame.backingColor}
+          onChange={(backingColor) => onChangeFrame({ ...frame, backingColor })}
+        />
       )
     },
     {
@@ -1207,18 +1151,57 @@ export function buildPrintMobileTabs({
       label: "网点",
       content: (
         <div className="field field-control seed-control">
-          <span>随机网点</span>
+          <FieldCaption>随机网点</FieldCaption>
           <div className="seed-value-row">
             <strong>{frame.seed}</strong>
-            <button
-              aria-label="重掷网点参数"
-              className="seed-dice"
-              title="重掷网点参数"
-              type="button"
-              onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))}
-            >
-              <Dices aria-hidden="true" size={15} strokeWidth={2.2} />
-            </button>
+            <LocalizedDiceButton label="重掷网点参数" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
+          </div>
+        </div>
+      )
+    }
+  ];
+}
+
+export function buildStampMobileTabs({
+  frame,
+  title,
+  date,
+  postmark,
+  font,
+  onChangeFrame,
+  onChangeSeed,
+  onChangeText,
+  onChangeFont
+}: {
+  frame: StampFrameConfig;
+  title: string;
+  date: string;
+  postmark: string;
+  font: TextFontId;
+  onChangeFrame: (frame: StampFrameConfig) => void;
+  onChangeSeed: (seed: number) => void;
+  onChangeText: (field: "title" | "subtitle" | "credit", value: string) => void;
+  onChangeFont: (font: TextFontId) => void;
+}): MobileInspectorTab[] {
+  return [
+    { id: "ratio", label: "比例", content: <RatioControl value={frame.canvasRatio} onChange={(canvasRatio) => onChangeFrame({ ...frame, canvasRatio })} /> },
+    { id: "size", label: "邮票", content: <RangeControl label="邮票大小" min={STAMP_FRAME_LIMITS.stampSize.min} max={STAMP_FRAME_LIMITS.stampSize.max} step={1} suffix="%" value={frame.stampSize} onChange={(stampSize) => onChangeFrame({ ...frame, stampSize })} /> },
+    { id: "padding", label: "留白", content: <RangeControl label="图像留白" min={STAMP_FRAME_LIMITS.stampPadding.min} max={STAMP_FRAME_LIMITS.stampPadding.max} step={0.5} suffix="%" value={frame.stampPadding} onChange={(stampPadding) => onChangeFrame({ ...frame, stampPadding })} /> },
+    { id: "perforation", label: "齿孔", content: <RangeControl label="齿孔大小" min={STAMP_FRAME_LIMITS.perforationSize.min} max={STAMP_FRAME_LIMITS.perforationSize.max} step={1} suffix="px" value={frame.perforationSize} onChange={(perforationSize) => onChangeFrame({ ...frame, perforationSize })} /> },
+    { id: "font", label: "字体", content: <FontControl value={font} onChange={onChangeFont} /> },
+    { id: "caption-size", label: "字号", content: <RangeControl label="文字字号" min={STAMP_FRAME_LIMITS.captionSize.min} max={STAMP_FRAME_LIMITS.captionSize.max} step={1} suffix="px" value={frame.captionSize} onChange={(captionSize) => onChangeFrame({ ...frame, captionSize })} /> },
+    { id: "title", label: "底部文字", content: <TextAreaControl label="底部文字" maxLength={48} value={title} onChange={(value) => onChangeText("title", value)} /> },
+    { id: "date", label: "日期时间", content: <TextAreaControl label="日期时间" maxLength={32} value={date} onChange={(value) => onChangeText("subtitle", value)} /> },
+    { id: "postmark", label: "邮戳", content: <TextAreaControl label="邮戳文字（支持换行）" maxLength={64} value={postmark} onChange={(value) => onChangeText("credit", value)} /> },
+    {
+      id: "seed",
+      label: "角度",
+      content: (
+        <div className="field field-control seed-control">
+          <FieldCaption>随机角度</FieldCaption>
+          <div className="seed-value-row">
+            <strong>{frame.seed}</strong>
+            <LocalizedDiceButton label="重掷邮票角度" onClick={() => onChangeSeed(Math.floor(Math.random() * 100000))} />
           </div>
         </div>
       )

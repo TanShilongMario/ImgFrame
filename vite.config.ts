@@ -1,7 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
+// GitHub Pages：`vite build --mode pages` → https://<user>.github.io/ImgFrame/
+export default defineConfig(({ mode }) => ({
+  base: mode === "pages" ? "/ImgFrame/" : "/",
   plugins: [react()],
   server: {
     host: true,
@@ -13,4 +15,4 @@ export default defineConfig({
     port: 4173,
     strictPort: false
   }
-});
+}));
